@@ -3,9 +3,7 @@
  * Note: This file requires TailwindCSS 4.x (beta) with @tailwindcss/postcss
  * PostCSS configuration must use '@tailwindcss/postcss' plugin, not the legacy 'tailwindcss' plugin
  */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import 'tailwindcss';
 
 /* Custom global styles */
 @layer base {
@@ -18,7 +16,7 @@
 
 	/* Focus styles for accessibility */
 	*:focus-visible {
-		@apply outline-2 outline-offset-2 outline-primary-500;
+		@apply outline-2 outline-offset-2 outline-blue-500;
 	}
 
 	/* Custom scrollbar styles */
@@ -51,20 +49,20 @@
 	}
 
 	.btn-primary {
-		@apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+		@apply inline-flex items-center justify-center px-4 py-2 font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
 	}
 
 	.btn-secondary {
-		@apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+		@apply inline-flex items-center justify-center px-4 py-2 font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
 	}
 
 	.btn-danger {
-		@apply btn bg-danger text-white hover:bg-red-600 focus:ring-red-500;
+		@apply inline-flex items-center justify-center px-4 py-2 font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 text-white hover:bg-red-600 focus:ring-red-500;
 	}
 
 	/* Form input styles */
 	.input {
-		@apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+		@apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
 	}
 
 	.label {
