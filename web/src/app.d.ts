@@ -24,22 +24,26 @@ declare global {
 			};
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 		interface PageData {
-			// Page-level data
+			// Page-level data will be added as needed
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 		interface PageState {
-			// Page state for shallow routing
+			// Page state for shallow routing will be added as needed
 		}
 
+		// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 		interface Platform {
-			// Platform-specific properties
+			// Platform-specific properties will be added as needed
 		}
 	}
 
 	// Extend Window interface for client-side globals
+	// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 	interface Window {
-		// Add any client-side globals here
+		// Client-side globals will be added as needed
 	}
 
 	// Type definitions for environment variables
