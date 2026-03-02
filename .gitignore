@@ -18,6 +18,8 @@ vendor/
 # Build outputs
 api/cmd/server/main
 api/main
+dist/
+build/
 web/build/
 web/.svelte-kit/
 
