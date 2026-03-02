@@ -15,18 +15,18 @@ export default {
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
-          950: '#172554'
+          950: '#172554',
         },
         success: '#10b981',
         warning: '#f59e0b',
         danger: '#ef4444',
-        info: '#3b82f6'
+        info: '#3b82f6',
       },
       fontFamily: {
         sans: ['Inter var', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace']
-      }
+        mono: ['JetBrains Mono', 'monospace'],
+      },
     },
   },
   plugins: [],
-}
+};

@@ -11,25 +11,20 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/',
-        '*.config.js',
-        '*.config.ts'
-      ]
-    }
+      exclude: ['node_modules/', 'src/test/', '*.config.js', '*.config.ts'],
+    },
   },
   resolve: {
-    conditions: ['browser']
+    conditions: ['browser'],
   },
   server: {
     port: 5173,
     strictPort: false,
-    host: true
+    host: true,
   },
   preview: {
     port: 4173,
     strictPort: false,
-    host: true
-  }
+    host: true,
+  },
 });

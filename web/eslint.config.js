@@ -18,17 +18,17 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2022
-      }
-    }
+        ...globals.es2022,
+      },
+    },
   },
   {
     files: ['**/*.svelte'],
     languageOptions: {
       parserOptions: {
-        parser: tseslint.parser
-      }
-    }
+        parser: tseslint.parser,
+      },
+    },
   },
   {
     rules: {
@@ -42,16 +42,13 @@ export default [
           caughtErrors: 'all',
           caughtErrorsIgnorePattern: '^_',
           destructuredArrayIgnorePattern: '^_',
-          ignoreRestSiblings: true
-        }
+          ignoreRestSiblings: true,
+        },
       ],
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { prefer: 'type-imports' }
-      ],
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-debugger': 'error'
-    }
+      'no-debugger': 'error',
+    },
   },
   {
     ignores: [
@@ -65,7 +62,7 @@ export default [
       '!.env.example',
       'pnpm-lock.yaml',
       'package-lock.json',
-      'yarn.lock'
-    ]
-  }
+      'yarn.lock',
+    ],
+  },
 ];
