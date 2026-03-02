@@ -1,0 +1,27 @@
+# Build outputs
+api/
+web/build/
+web/.svelte-kit/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Generated
+*.min.js
+*.min.css
+
+# Data
+*.json
+*.csv
+*.sql
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+
+# Misc
+.git/
+.DS_Store
+coverage/
