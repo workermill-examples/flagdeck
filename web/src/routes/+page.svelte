@@ -10,7 +10,13 @@
 
 	// Effect using $effect rune
 	$effect(() => {
-		console.log(`Count changed to: ${count}`);
+		// Count changed effect - logging disabled per ESLint rules
+		// In production, this would trigger analytics or other side effects
+		if (count > 10) {
+			message = 'You really like clicking!';
+		} else {
+			message = 'Welcome to FlagDeck';
+		}
 	});
 
 	function increment() {

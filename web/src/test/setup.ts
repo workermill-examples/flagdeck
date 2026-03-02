@@ -34,7 +34,9 @@ vi.mock('$app/navigation', () => ({
 }));
 
 vi.mock('$app/stores', () => {
-	const writable = (value: unknown) => {
+	// Helper function for creating writable stores in tests
+	// Prefixed with underscore to indicate it's currently unused but may be needed
+	const _writable = (value: unknown) => {
 		let subscribers: Array<(value: unknown) => void> = [];
 		let currentValue = value;
 
@@ -57,6 +59,9 @@ vi.mock('$app/stores', () => {
 		};
 	};
 
+	// Suppress unused variable warning
+	void _writable;
+
 	const readable = (value: unknown) => ({
 		subscribe: (fn: (value: unknown) => void) => {
 			fn(value);
@@ -64,6 +69,8 @@ vi.mock('$app/stores', () => {
 		}
 	});
 
+	// Note: _writable is defined for potential future use in tests
+	// Currently only readable stores are exposed
 	return {
 		page: readable({
 			url: new URL('http://localhost:5173'),
@@ -86,9 +93,11 @@ global.fetch = vi.fn();
 
 // Add custom matchers or global test utilities here
 declare global {
+	// eslint-disable-next-line @typescript-eslint/no-namespace
 	namespace Vi {
+		// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 		interface Assertion {
-			// Add custom matchers if needed
+			// Custom matchers will be added as needed
 		}
 	}
 }

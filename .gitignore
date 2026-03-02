@@ -1,5 +1,53 @@
+# Dependencies
+node_modules/
+vendor/
 
-node_modules
+# Build outputs
+dist/
+build/
+*.out
+/api/main
+/api/server
+/api/cmd/server/server
+/web/build
+/web/.svelte-kit
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# Docker
+docker-compose.override.yml
+
+# WorkerMill specific
 .workermill-message.md
 .workermill-response.md
 .workermill-answer.md
