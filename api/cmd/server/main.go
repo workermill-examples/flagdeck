@@ -1,25 +1,102 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
+
+	"github.com/workermill-examples/flagdeck/api/internal/config"
+	"github.com/workermill-examples/flagdeck/api/internal/database"
+	"github.com/workermill-examples/flagdeck/api/internal/middleware"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	cfg := config.Load()
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "OK")
+	mongodb, err := database.NewMongoDB(cfg.MongodbURI)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	defer mongodb.Close()
+
+	redisdb, err := database.NewRedisDB(cfg.RedisURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+	defer redisdb.Close()
+
+	app := fiber.New(fiber.Config{
+		ErrorHandler: middleware.ErrorHandler,
+		BodyLimit:    10 * 1024 * 1024, // 10MB
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	})
 
-	log.Printf("Starting server on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatal(err)
+	app.Use(requestid.New())
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${pid} ${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
+	}))
+	app.Use(recover.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "*",
+		AllowMethods:     "GET,POST,PUT,DELETE,PATCH,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Authorization,X-API-Key",
+		AllowCredentials: true,
+	}))
+
+	app.Get("/health", func(c *fiber.Ctx) error {
+		mongoStatus := "connected"
+		if err := mongodb.Ping(); err != nil {
+			mongoStatus = "disconnected"
+		}
+
+		redisStatus := "connected"
+		if err := redisdb.Ping(); err != nil {
+			redisStatus = "disconnected"
+		}
+
+		status := fiber.StatusOK
+		if mongoStatus == "disconnected" || redisStatus == "disconnected" {
+			status = fiber.StatusServiceUnavailable
+		}
+
+		return c.Status(status).JSON(fiber.Map{
+			"status":  "ok",
+			"mongodb": mongoStatus,
+			"redis":   redisStatus,
+		})
+	})
+
+	port := cfg.Port
+	if port == "" {
+		port = "3000"
 	}
+
+	go func() {
+		log.Printf("Starting server on port %s", port)
+		if err := app.Listen(":" + port); err != nil {
+			log.Fatalf("Server failed to start: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down server...")
+
+	if err := app.ShutdownWithTimeout(30 * time.Second); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	log.Println("Server gracefully stopped")
 }
