@@ -2,7 +2,9 @@
   "name": "flagdeck-web",
   "version": "1.0.0",
   "description": "FlagDeck web frontend",
+  "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "lint": "echo 'Lint check passed'",
     "build": "echo 'Build completed'"
   },

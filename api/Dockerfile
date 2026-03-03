@@ -1,5 +1,5 @@
 # Multi-stage build for FlagDeck API
-FROM golang:1.24-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install git for go modules that might need it
 RUN apk add --no-cache git
@@ -16,37 +16,25 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application binaries
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o seed ./cmd/seed
+# Build the application binaries - static compilation
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o main ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o seed ./cmd/seed
 
-# Production stage
-FROM alpine:3.21
+# Production stage - minimal image
+FROM scratch
 
-# Install ca-certificates for HTTPS requests and wget for healthcheck
-RUN apk --no-cache add ca-certificates wget
+# Copy CA certificates for HTTPS
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Create non-root user
-RUN addgroup -g 1001 appgroup && adduser -S appuser -u 1001 -G appgroup
-
-WORKDIR /root/
+# Set working directory
+WORKDIR /app
 
 # Copy the binary from builder stage
-COPY --from=builder /app/main .
-COPY --from=builder /app/seed .
+COPY --from=builder /app/main /app/main
+COPY --from=builder /app/seed /app/seed
 
-# Change ownership to appuser
-RUN chown appuser:appgroup main seed
-
-# Switch to non-root user
-USER appuser
-
-# Expose port (will be overridden by docker-compose)
+# Expose port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/health || exit 1
-
-# Command runs seed first, then main server
-CMD ["/bin/sh", "-c", "./seed && ./main"]
+# Run the main server
+ENTRYPOINT ["/app/main"]

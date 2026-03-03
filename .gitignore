@@ -3,3 +3,6 @@ node_modules
 .workermill-message.md
 .workermill-response.md
 .workermill-answer.md
+
+# Go binaries
+api/bin/
