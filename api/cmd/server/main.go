@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
@@ -47,12 +46,7 @@ func main() {
 		Format: "[${time}] ${pid} ${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
 	}))
 	app.Use(recover.New())
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "*",
-		AllowMethods:     "GET,POST,PUT,DELETE,PATCH,OPTIONS",
-		AllowHeaders:     "Origin,Content-Type,Authorization,X-API-Key",
-		AllowCredentials: true,
-	}))
+	app.Use(middleware.DefaultCORS())
 
 	// Setup all application routes
 	routes.SetupRoutes(app, mongodb, redisdb, cfg)
