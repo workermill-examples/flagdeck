@@ -16,6 +16,7 @@ import (
 	"github.com/workermill-examples/flagdeck/api/internal/config"
 	"github.com/workermill-examples/flagdeck/api/internal/database"
 	"github.com/workermill-examples/flagdeck/api/internal/middleware"
+	"github.com/workermill-examples/flagdeck/api/internal/routes"
 )
 
 func main() {
@@ -53,28 +54,8 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	app.Get("/health", func(c *fiber.Ctx) error {
-		mongoStatus := "connected"
-		if err := mongodb.Ping(); err != nil {
-			mongoStatus = "disconnected"
-		}
-
-		redisStatus := "connected"
-		if err := redisdb.Ping(); err != nil {
-			redisStatus = "disconnected"
-		}
-
-		status := fiber.StatusOK
-		if mongoStatus == "disconnected" || redisStatus == "disconnected" {
-			status = fiber.StatusServiceUnavailable
-		}
-
-		return c.Status(status).JSON(fiber.Map{
-			"status":  "ok",
-			"mongodb": mongoStatus,
-			"redis":   redisStatus,
-		})
-	})
+	// Setup all application routes
+	routes.SetupRoutes(app, mongodb, redisdb, cfg)
 
 	port := cfg.Port
 	if port == "" {
