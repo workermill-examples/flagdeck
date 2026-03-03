@@ -1,0 +1,23 @@
+package models
+
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type Segment struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Key         string             `bson:"key" json:"key"`
+	Name        string             `bson:"name" json:"name"`
+	Description string             `bson:"description" json:"description"`
+	Rules       []SegmentRule      `bson:"rules" json:"rules"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+type SegmentRule struct {
+	Attribute string      `bson:"attribute" json:"attribute"`
+	Operator  string      `bson:"operator" json:"operator"`
+	Value     interface{} `bson:"value" json:"value"`
+}
