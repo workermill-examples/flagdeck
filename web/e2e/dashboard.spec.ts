@@ -97,9 +97,7 @@ test.describe("Dashboard Page", () => {
 
     // Verify "View all activity" link
     await expect(page.locator('a:has-text("View all activity")')).toBeVisible();
-    await expect(
-      page.locator('main a[href="/audit-log"]'),
-    ).toBeVisible();
+    await expect(page.locator('main a[href="/audit-log"]')).toBeVisible();
   });
 
   test("displays flag status overview with seeded flags", async ({ page }) => {
@@ -169,9 +167,7 @@ test.describe("Dashboard Page", () => {
 
     // Wait for error to appear
     await expect(page.locator(".bg-red-50")).toBeVisible({ timeout: 10000 });
-    await expect(page.locator(".text-red-800")).toContainText(
-      /Failed|error/i,
-    );
+    await expect(page.locator(".text-red-800")).toContainText(/Failed|error/i);
   });
 
   test("navigation links work correctly", async ({ page }) => {

@@ -212,7 +212,9 @@ test.describe("Flags Page", () => {
 
       // Verify environment configuration is shown
       // Look for environment toggle switches or rollout sliders
-      const toggles = page.locator('button[class*="rounded-full"][class*="h-6"]');
+      const toggles = page.locator(
+        'button[class*="rounded-full"][class*="h-6"]',
+      );
       const toggleCount = await toggles.count();
       expect(toggleCount).toBeGreaterThan(0);
     }

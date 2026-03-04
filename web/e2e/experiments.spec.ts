@@ -119,9 +119,9 @@ test.describe("Experiments Page", () => {
     await expect(
       page.locator('input[placeholder="control"]').first(),
     ).toBeVisible();
-    await expect(page.locator(".border.border-gray-200.rounded-lg.p-4")).toHaveCount(
-      2,
-    );
+    await expect(
+      page.locator(".border.border-gray-200.rounded-lg.p-4"),
+    ).toHaveCount(2);
 
     // Verify weights are balanced
     const controlWeight = await page
