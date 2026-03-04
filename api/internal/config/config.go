@@ -5,18 +5,20 @@ import (
 )
 
 type Config struct {
-	Port       string
-	MongodbURI string
-	RedisURL   string
-	JWTSecret  string
+	Port        string
+	MongodbURI  string
+	RedisURL    string
+	JWTSecret   string
+	CORSOrigins string
 }
 
 func Load() *Config {
 	cfg := &Config{
-		Port:       getEnvOrDefault("PORT", "3000"),
-		MongodbURI: getEnvOrDefault("MONGODB_URI", "mongodb://localhost:27017"),
-		RedisURL:   getEnvOrDefault("REDIS_URL", "redis://localhost:6379"),
-		JWTSecret:  getEnvOrDefault("JWT_SECRET", "your-secret-key"),
+		Port:        getEnvOrDefault("PORT", "3000"),
+		MongodbURI:  getEnvOrDefault("MONGODB_URI", "mongodb://localhost:27017"),
+		RedisURL:    getEnvOrDefault("REDIS_URL", "redis://localhost:6379"),
+		JWTSecret:   getEnvOrDefault("JWT_SECRET", "your-secret-key"),
+		CORSOrigins: os.Getenv("CORS_ORIGINS"),
 	}
 	return cfg
 }

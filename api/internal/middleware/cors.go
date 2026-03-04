@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +21,7 @@ func CORS(config ...CORSConfig) fiber.Handler {
 	}
 
 	if len(cfg.AllowedOrigins) == 0 {
-		cfg.AllowedOrigins = []string{
+		defaults := []string{
 			"http://localhost:3000",
 			"http://localhost:3001",
 			"http://localhost:8080",
@@ -28,6 +29,16 @@ func CORS(config ...CORSConfig) fiber.Handler {
 			"http://127.0.0.1:3001",
 			"http://127.0.0.1:8080",
 		}
+		// Append origins from CORS_ORIGINS env var (comma-separated)
+		if envOrigins := os.Getenv("CORS_ORIGINS"); envOrigins != "" {
+			for _, origin := range strings.Split(envOrigins, ",") {
+				origin = strings.TrimSpace(origin)
+				if origin != "" {
+					defaults = append(defaults, origin)
+				}
+			}
+		}
+		cfg.AllowedOrigins = defaults
 	}
 
 	if len(cfg.AllowedMethods) == 0 {
