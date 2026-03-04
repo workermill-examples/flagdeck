@@ -6,6 +6,12 @@ import { auth } from "$lib/auth.js";
 import Sidebar from "$lib/components/Sidebar.svelte";
 import "../../app.css";
 
+interface Props {
+  children: import('svelte').Snippet;
+}
+
+let { children }: Props = $props();
+
 // Check if we're on the login page
 let isLoginPage = $derived($page.url.pathname === "/login");
 
@@ -37,14 +43,14 @@ $effect(() => {
 {:else if isLoginPage}
   <!-- Login page - no sidebar -->
   <main class="min-h-screen bg-gray-50">
-    <slot />
+    {@render children()}
   </main>
 {:else if auth.isAuthenticated}
   <!-- Authenticated layout with sidebar -->
   <div class="min-h-screen bg-gray-50 flex">
     <Sidebar />
     <main class="flex-1 overflow-hidden">
-      <slot />
+      {@render children()}
     </main>
   </div>
 {:else}

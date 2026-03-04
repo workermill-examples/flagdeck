@@ -58,17 +58,16 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        PUBLIC_API_URL: http://localhost:8080
     container_name: flagdeck-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      PUBLIC_API_URL: http://localhost:8080
-      NODE_ENV: development
+      - "3000:80"
     depends_on:
       - api
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3

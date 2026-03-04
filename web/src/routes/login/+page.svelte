@@ -51,7 +51,7 @@ async function handleLogin(event: Event) {
     </div>
 
     <!-- Login Form -->
-    <form class="mt-8 space-y-6" on:submit={handleLogin}>
+    <form class="mt-8 space-y-6" onsubmit={handleLogin}>
       <div class="space-y-4">
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700">
