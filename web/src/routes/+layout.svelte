@@ -17,6 +17,9 @@
     $page.url.pathname === "/login" || $page.url.pathname === "/",
   );
 
+  // Landing page has its own background
+  let isLandingPage = $derived($page.url.pathname === "/");
+
   // Auth guard - redirect to login if not authenticated and not on a public page
   onMount(async () => {
     await auth.checkAuth();
@@ -46,7 +49,7 @@
   </div>
 {:else if isFullWidthPage}
   <!-- Full-width pages: landing page, login (no sidebar) -->
-  <main class="min-h-screen bg-gray-50">
+  <main class="min-h-screen {isLandingPage ? '' : 'bg-gray-50'}">
     {@render children()}
   </main>
 {:else if auth.isAuthenticated}
