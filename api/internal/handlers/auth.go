@@ -37,9 +37,10 @@ type RefreshRequest struct {
 }
 
 type AuthResponse struct {
-	User         UserResponse `json:"user"`
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	TokenType    string `json:"token_type"`
 }
 
 type UserResponse struct {
@@ -128,17 +129,12 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return middleware.NewInternalError("Failed to generate authentication tokens")
 	}
 
-	// Return user info and tokens
+	// Return tokens according to spec
 	return c.Status(fiber.StatusCreated).JSON(AuthResponse{
-		User: UserResponse{
-			ID:        user.ID.Hex(),
-			Email:     user.Email,
-			Name:      user.Name,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
-		},
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		ExpiresIn:    900, // 15 minutes in seconds
+		TokenType:    "Bearer",
 	})
 }
 
@@ -183,17 +179,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return middleware.NewInternalError("Failed to generate authentication tokens")
 	}
 
-	// Return user info and tokens
+	// Return tokens according to spec
 	return c.JSON(AuthResponse{
-		User: UserResponse{
-			ID:        user.ID.Hex(),
-			Email:     user.Email,
-			Name:      user.Name,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
-		},
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		ExpiresIn:    900, // 15 minutes in seconds
+		TokenType:    "Bearer",
 	})
 }
 
@@ -243,15 +234,10 @@ func (h *AuthHandler) Refresh(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(AuthResponse{
-		User: UserResponse{
-			ID:        user.ID.Hex(),
-			Email:     user.Email,
-			Name:      user.Name,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
-		},
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		ExpiresIn:    900, // 15 minutes in seconds
+		TokenType:    "Bearer",
 	})
 }
 

@@ -7,96 +7,30 @@ on:
     branches: [main]
 
 jobs:
-  ci:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.24'
-          go-version-file: 'api/go.mod'
+      - name: Start stack
+        run: docker compose up -d --wait
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: 'web/package-lock.json'
-
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Start docker-compose stack
+      - name: Go quality gates
         run: |
-          docker compose up -d --wait
+          cd api && go vet ./...
+          MONGODB_URI=mongodb://localhost:27017/flagdeck_test REDIS_URL=redis://localhost:6379 go test ./... -v -count=1 -race
+          go build -o /dev/null ./cmd/server
+          gofmt -l . | grep . && exit 1 || true
 
-      - name: Wait for services to be healthy
+      - name: Web quality gates
+        run: cd web && npm ci && npm run lint && npm run build
+
+      - name: E2E tests
         run: |
-          echo "Waiting for services to be healthy..."
-          timeout 120s bash -c 'until docker compose ps | grep -q "healthy"; do sleep 2; done'
-          docker compose ps
+          cd web
+          npx playwright install --with-deps chromium
+          BASE_URL=http://localhost:3000 API_URL=http://localhost:8080 npx playwright test
 
-      - name: Run Go quality gates
-        working-directory: ./api
-        env:
-          MONGODB_URI: mongodb://localhost:27017/flagdeck_test
-          REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret
-        run: |
-          # Go vet
-          echo "Running go vet..."
-          go vet ./...
-
-          # Go test
-          echo "Running go test..."
-          go test -v ./...
-
-          # Go build
-          echo "Running go build..."
-          go build -o bin/server ./cmd/server
-          go build -o bin/seed ./cmd/seed
-
-          # Go fmt check
-          echo "Checking go fmt..."
-          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
-            echo "gofmt check failed. Please run 'go fmt ./...' to fix formatting issues:"
-            gofmt -l .
-            exit 1
-          fi
-          echo "gofmt check passed"
-
-      - name: Run web quality gates
-        working-directory: ./web
-        run: |
-          # npm ci
-          echo "Running npm ci..."
-          npm ci
-
-          # npm run lint
-          echo "Running npm run lint..."
-          npm run lint
-
-          # npm run build
-          echo "Running npm run build..."
-          npm run build
-
-      - name: Run Playwright E2E tests
-        env:
-          PUBLIC_API_URL: http://localhost:8080
-        run: |
-          echo "Running Playwright E2E tests..."
-          npx playwright test
-
-      - name: Cleanup docker-compose stack
+      - name: Stop stack
         if: always()
-        run: |
-          echo "Cleaning up docker-compose stack..."
-          docker compose down -v
-          docker compose ps
+        run: docker compose down

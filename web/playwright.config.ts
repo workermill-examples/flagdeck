@@ -28,11 +28,6 @@ export default defineConfig({
 
     /* Video recording on failure */
     video: "retain-on-failure",
-
-    /* API URL for API-related tests */
-    extraHTTPHeaders: {
-      // API URL will be available via process.env.API_URL in tests
-    },
   },
 
   /* Configure projects for major browsers. */
@@ -42,13 +37,4 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "npm run dev",
-        url: "http://localhost:5173",
-        reuseExistingServer: !process.env.CI,
-      },
 });
