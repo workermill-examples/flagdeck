@@ -6,6 +6,7 @@ import (
 	"github.com/workermill-examples/flagdeck/api/internal/config"
 	"github.com/workermill-examples/flagdeck/api/internal/database"
 	"github.com/workermill-examples/flagdeck/api/internal/handlers"
+	"github.com/workermill-examples/flagdeck/api/internal/middleware"
 	"github.com/workermill-examples/flagdeck/api/internal/services"
 )
 
@@ -49,28 +50,32 @@ func SetupRoutes(app *fiber.App, mongodb *database.MongoDB, redisdb *database.Re
 	auditHandler := handlers.NewAuditHandler(mongodb.AuditLogCollection())
 
 	// Initialize middleware
-	// TODO: Implement middleware constructors
-	// jwtAuth := middleware.NewJWTAuthMiddleware(mongodb.UsersCollection())
-	// apiKeyAuth := middleware.NewApiKeyAuthMiddleware(mongodb.APIKeysCollection())
-	// authRateLimit := middleware.NewRateLimitMiddleware(redisdb, "auth", 5, 60)    // 5 req/min for auth
-	// apiRateLimit := middleware.NewRateLimitMiddleware(redisdb, "api", 100, 900)   // 100 req/15min for API
-	// evalRateLimit := middleware.NewRateLimitMiddleware(redisdb, "eval", 1000, 60) // 1000 req/min for evaluation
+	jwtAuth := middleware.AuthenticateJWT(middleware.AuthConfig{
+		JWTSecret:      cfg.JWTSecret,
+		UserCollection: mongodb.UsersCollection(),
+	})
+	apiKeyAuth := middleware.AuthenticateAPIKey(middleware.APIKeyConfig{
+		APIKeyCollection: mongodb.APIKeysCollection(),
+	})
+	authRateLimit := middleware.AuthRateLimit(redisdb.Client)     // 5 req/min for auth
+	apiRateLimit := middleware.APIRateLimit(redisdb.Client)       // 100 req/15min for API
+	evalRateLimit := middleware.EvaluateRateLimit(redisdb.Client) // 1000 req/min for evaluation
 
 	// Public routes
 	app.Get("/health", healthHandler.GetHealth)
 
 	// Authentication routes (public but rate-limited)
-	authGroup := app.Group("/auth") // TODO: Add authRateLimit
+	authGroup := app.Group("/auth", authRateLimit)
 	authGroup.Post("/register", authHandler.Register)
 	authGroup.Post("/login", authHandler.Login)
-	// authGroup.Post("/refresh", authHandler.RefreshToken) // TODO: Implement RefreshToken method
+	authGroup.Post("/refresh", authHandler.Refresh)
 	authGroup.Post("/logout", authHandler.Logout)
 
 	// Protected authentication routes (require JWT)
-	authGroup.Get("/me", authHandler.GetMe) // TODO: Add jwtAuth middleware
+	authGroup.Get("/me", jwtAuth, authHandler.GetMe)
 
 	// Protected API routes (require JWT authentication)
-	apiGroup := app.Group("/api/v1") // TODO: Add jwtAuth, apiRateLimit middleware
+	apiGroup := app.Group("/api/v1", jwtAuth, apiRateLimit)
 
 	// Flag management
 	apiGroup.Get("/flags", flagsHandler.ListFlags)
@@ -110,8 +115,8 @@ func SetupRoutes(app *fiber.App, mongodb *database.MongoDB, redisdb *database.Re
 	apiGroup.Get("/audit-log", auditHandler.GetAuditLog)
 
 	// API key authenticated routes (for flag evaluation and experiment tracking)
-	evalGroup := app.Group("/api/v1") // TODO: Add apiKeyAuth, evalRateLimit middleware
-	evalGroup.Post("/evaluate", evaluateHandler.EvaluateFlag)
-	evalGroup.Post("/evaluate/bulk", evaluateHandler.EvaluateBulk)
-	evalGroup.Post("/experiments/:key/track", experimentsHandler.TrackExperiment)
+	// These routes use API key authentication instead of JWT
+	app.Post("/api/v1/evaluate", apiKeyAuth, evalRateLimit, evaluateHandler.EvaluateFlag)
+	app.Post("/api/v1/evaluate/bulk", apiKeyAuth, evalRateLimit, evaluateHandler.EvaluateBulk)
+	app.Post("/api/v1/experiments/:key/track", apiKeyAuth, evalRateLimit, experimentsHandler.TrackExperiment)
 }
