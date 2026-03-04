@@ -63,7 +63,7 @@ async function handleLogout() {
         </div>
       </div>
       <button
-        on:click={handleLogout}
+        onclick={handleLogout}
         class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
         title="Logout"
       >
