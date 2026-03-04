@@ -1,38 +1,40 @@
 <script lang="ts">
-import { page } from "$app/stores";
-import { auth } from "$lib/auth.js";
+  import { page } from "$app/stores";
+  import { auth } from "$lib/auth.js";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: string;
-}
+  interface NavItem {
+    href: string;
+    label: string;
+    icon: string;
+  }
 
-const navItems: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: "🏠" },
-  { href: "/flags", label: "Flags", icon: "🏁" },
-  { href: "/environments", label: "Environments", icon: "🌍" },
-  { href: "/segments", label: "Segments", icon: "👥" },
-  { href: "/experiments", label: "Experiments", icon: "🧪" },
-  { href: "/audit-log", label: "Audit Log", icon: "📋" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
-];
+  const navItems: NavItem[] = [
+    { href: "/dashboard", label: "Dashboard", icon: "\uD83C\uDFE0" },
+    { href: "/flags", label: "Flags", icon: "\uD83C\uDFC1" },
+    { href: "/environments", label: "Environments", icon: "\uD83C\uDF0D" },
+    { href: "/segments", label: "Segments", icon: "\uD83D\uDC65" },
+    { href: "/experiments", label: "Experiments", icon: "\uD83E\uDDEA" },
+    { href: "/audit-log", label: "Audit Log", icon: "\uD83D\uDCCB" },
+    { href: "/settings", label: "Settings", icon: "\u2699\uFE0F" },
+  ];
 
-async function handleLogout() {
-  await auth.logout();
-  window.location.href = "/login";
-}
+  async function handleLogout() {
+    await auth.logout();
+    window.location.href = "/";
+  }
 </script>
 
 <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
   <!-- Header with FlagDeck branding -->
   <div class="px-6 py-4 border-b border-gray-200">
-    <div class="flex items-center space-x-2">
-      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+    <a href="/" class="flex items-center space-x-2">
+      <div
+        class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+      >
         FD
       </div>
       <h1 class="text-xl font-bold text-gray-900">FlagDeck</h1>
-    </div>
+    </a>
   </div>
 
   <!-- Navigation -->
@@ -54,12 +56,18 @@ async function handleLogout() {
   <div class="px-4 py-4 border-t border-gray-200">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm">
+        <div
+          class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-sm"
+        >
           {auth.user?.name?.charAt(0).toUpperCase() || "U"}
         </div>
         <div class="flex flex-col">
-          <span class="text-sm font-medium text-gray-900">{auth.user?.name || "User"}</span>
-          <span class="text-xs text-gray-500">{auth.user?.email || ""}</span>
+          <span class="text-sm font-medium text-gray-900"
+            >{auth.user?.name || "User"}</span
+          >
+          <span class="text-xs text-gray-500"
+            >{auth.user?.email || ""}</span
+          >
         </div>
       </div>
       <button
@@ -67,8 +75,18 @@ async function handleLogout() {
         class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
         title="Logout"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          />
         </svg>
       </button>
     </div>
