@@ -70,7 +70,9 @@ export interface Segment {
 }
 
 export interface SegmentRule {
-  conditions: Condition[];
+  attribute: string;
+  operator: string;
+  value: unknown;
 }
 
 export interface Experiment {
