@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/workermill-examples/flagdeck/api/internal/middleware"
 	"github.com/workermill-examples/flagdeck/api/internal/models"
 	"github.com/workermill-examples/flagdeck/api/internal/services"
 )
@@ -36,6 +37,7 @@ type CreateApiKeyRequest struct {
 type CreateApiKeyResponse struct {
 	ID          primitive.ObjectID `json:"id"`
 	Name        string             `json:"name"`
+	KeyPrefix   string             `json:"key_prefix"`
 	RawKey      string             `json:"raw_key"`
 	Environment string             `json:"environment"`
 	LastUsedAt  *time.Time         `json:"last_used_at"`
@@ -61,156 +63,115 @@ func generateAPIKey() (string, error) {
 
 // GET /api/v1/api-keys
 func (h *ApiKeysHandler) ListApiKeys(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Get pagination parameters
+	limitStr := c.Query("limit", "50")
+	offsetStr := c.Query("offset", "0")
 
-	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	if page < 1 {
-		page = 1
-	}
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	if limit < 1 || limit > 100 {
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil || limit <= 0 {
 		limit = 50
 	}
-	skip := (page - 1) * limit
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
 
 	// Get total count
-	totalCount, err := h.apiKeysCollection.CountDocuments(ctx, bson.M{})
+	total, err := h.apiKeysCollection.CountDocuments(context.Background(), bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to count API keys",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to count API keys")
 	}
 
 	// Get API keys with pagination
 	opts := options.Find().
-		SetSort(bson.M{"created_at": -1}).
-		SetSkip(int64(skip)).
-		SetLimit(int64(limit))
+		SetLimit(limit).
+		SetSkip(offset).
+		SetSort(bson.M{"created_at": -1})
 
-	cursor, err := h.apiKeysCollection.Find(ctx, bson.M{}, opts)
+	cursor, err := h.apiKeysCollection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch API keys",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve API keys")
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(context.Background())
 
 	var apiKeys []models.ApiKey
-	if err = cursor.All(ctx, &apiKeys); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to decode API keys",
-			},
-		})
+	if err := cursor.All(context.Background(), &apiKeys); err != nil {
+		return middleware.NewDatabaseError("Failed to decode API keys")
 	}
 
 	if apiKeys == nil {
 		apiKeys = []models.ApiKey{}
 	}
 
-	response := ApiKeysListResponse{
+	return c.JSON(ApiKeysListResponse{
 		Data:  apiKeys,
-		Total: totalCount,
-	}
-
-	return c.JSON(response)
+		Total: total,
+	})
 }
 
 // POST /api/v1/api-keys
 func (h *ApiKeysHandler) CreateApiKey(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	user := c.Locals("user").(middleware.UserContext)
 
 	var req CreateApiKeyRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_JSON",
-				"message": "Invalid JSON in request body",
-			},
-		})
+		return middleware.NewBadRequestError("Invalid request body")
 	}
 
 	// Validate required fields
 	if req.Name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Name is required",
-			},
-		})
+		return middleware.NewValidationError("Name is required")
 	}
 	if req.Environment == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Environment is required",
-			},
-		})
+		return middleware.NewValidationError("Environment is required")
 	}
 
 	// Generate raw API key
 	rawKey, err := generateAPIKey()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "KEY_GENERATION_ERROR",
-				"message": "Failed to generate API key",
-			},
-		})
+		return middleware.NewInternalError("Failed to generate API key")
 	}
 
 	// Hash the key for storage
 	hashedKey, err := bcrypt.GenerateFromPassword([]byte(rawKey), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "KEY_HASHING_ERROR",
-				"message": "Failed to hash API key",
-			},
-		})
+		return middleware.NewInternalError("Failed to hash API key")
 	}
 
+	// Extract key prefix (first 8 characters after "fd_")
+	keyPrefix := rawKey[:11] // "fd_" + first 8 hex chars
+
+	now := time.Now()
 	apiKey := models.ApiKey{
 		ID:          primitive.NewObjectID(),
 		Name:        req.Name,
+		KeyPrefix:   keyPrefix,
 		KeyHash:     string(hashedKey),
 		Environment: req.Environment,
 		LastUsedAt:  nil,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	_, err = h.apiKeysCollection.InsertOne(ctx, apiKey)
+	_, err = h.apiKeysCollection.InsertOne(context.Background(), apiKey)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to create API key",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to create API key")
 	}
 
 	// Log audit entry
-	user := c.Locals("user").(*models.User)
-	h.auditService.LogCreate("api_key", apiKey.ID.Hex(), user.ID, user.Email, map[string]interface{}{
+	changes := map[string]interface{}{
 		"name":        apiKey.Name,
+		"key_prefix":  apiKey.KeyPrefix,
 		"environment": apiKey.Environment,
-	})
+	}
+	h.auditService.LogCreate("api_key", apiKey.ID.Hex(), user.ID, user.Email, changes)
 
 	// Return response with the raw key (only time it's exposed)
 	response := CreateApiKeyResponse{
 		ID:          apiKey.ID,
 		Name:        apiKey.Name,
+		KeyPrefix:   apiKey.KeyPrefix,
 		RawKey:      rawKey,
 		Environment: apiKey.Environment,
 		LastUsedAt:  apiKey.LastUsedAt,
@@ -223,66 +184,44 @@ func (h *ApiKeysHandler) CreateApiKey(c *fiber.Ctx) error {
 
 // DELETE /api/v1/api-keys/:id
 func (h *ApiKeysHandler) DeleteApiKey(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	user := c.Locals("user").(middleware.UserContext)
 	idStr := c.Params("id")
+
 	if idStr == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_REQUEST",
-				"message": "API key ID is required",
-			},
-		})
+		return middleware.NewBadRequestError("API key ID is required")
 	}
 
 	// Convert string to ObjectID
 	id, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_ID",
-				"message": "Invalid API key ID format",
-			},
-		})
+		return middleware.NewBadRequestError("Invalid API key ID format")
 	}
 
-	// Check if API key exists
-	var apiKey models.ApiKey
-	err = h.apiKeysCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&apiKey)
+	// Get existing API key for audit
+	var existingApiKey models.ApiKey
+	err = h.apiKeysCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&existingApiKey)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "API_KEY_NOT_FOUND",
-					"message": "API key not found",
-				},
-			})
+			return middleware.NewNotFoundError("API key not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch API key",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve API key")
 	}
 
-	_, err = h.apiKeysCollection.DeleteOne(ctx, bson.M{"_id": id})
+	result, err := h.apiKeysCollection.DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to delete API key",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to delete API key")
+	}
+	if result.DeletedCount == 0 {
+		return middleware.NewNotFoundError("API key not found")
 	}
 
 	// Log audit entry
-	user := c.Locals("user").(*models.User)
-	h.auditService.LogDelete("api_key", idStr, user.ID, user.Email, map[string]interface{}{
-		"name":        apiKey.Name,
-		"environment": apiKey.Environment,
-	})
+	deletedData := map[string]interface{}{
+		"name":        existingApiKey.Name,
+		"key_prefix":  existingApiKey.KeyPrefix,
+		"environment": existingApiKey.Environment,
+	}
+	h.auditService.LogDelete("api_key", idStr, user.ID, user.Email, deletedData)
 
-	return c.Status(fiber.StatusNoContent).Send(nil)
+	return c.SendStatus(fiber.StatusNoContent)
 }
