@@ -46,9 +46,9 @@ test.describe("Audit Log Page", () => {
     const actionCount = await actionElements.count();
     expect(actionCount).toBeGreaterThan(0);
 
-    // Verify action types match expected format (e.g., "Create", "Update", "Delete", "Toggle")
+    // Verify action types match expected format (e.g., "Flag Created", "Flag Updated")
     const firstAction = await actionElements.first().textContent();
-    expect(firstAction).toMatch(/^(Create|Update|Delete|Toggle)$/i);
+    expect(firstAction).toMatch(/\w+\s+(Created|Updated|Deleted|Toggled)/i);
   });
 
   test("timeline shows user avatars and timestamps correctly", async ({
