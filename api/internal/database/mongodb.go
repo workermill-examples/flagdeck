@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -73,4 +74,70 @@ func (m *MongoDB) UsersCollection() *mongo.Collection {
 
 func (m *MongoDB) APIKeysCollection() *mongo.Collection {
 	return m.Database.Collection("api_keys")
+}
+
+func (m *MongoDB) CreateIndexes() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	collections := map[string]*mongo.Collection{
+		"flags":        m.FlagsCollection(),
+		"environments": m.EnvironmentsCollection(),
+		"segments":     m.SegmentsCollection(),
+		"experiments":  m.ExperimentsCollection(),
+		"users":        m.UsersCollection(),
+		"api_keys":     m.APIKeysCollection(),
+	}
+
+	indexes := map[string][]mongo.IndexModel{
+		"flags": {
+			{
+				Keys:    map[string]int{"key": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		"environments": {
+			{
+				Keys:    map[string]int{"key": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		"segments": {
+			{
+				Keys:    map[string]int{"key": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		"experiments": {
+			{
+				Keys:    map[string]int{"key": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		"users": {
+			{
+				Keys:    map[string]int{"email": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+		"api_keys": {
+			{
+				Keys:    map[string]int{"key_prefix": 1},
+				Options: options.Index().SetUnique(true),
+			},
+		},
+	}
+
+	for collectionName, collection := range collections {
+		if indexModels, exists := indexes[collectionName]; exists {
+			_, err := collection.Indexes().CreateMany(ctx, indexModels)
+			if err != nil {
+				log.Printf("Failed to create indexes for %s: %v", collectionName, err)
+				return err
+			}
+			log.Printf("Created indexes for collection: %s", collectionName)
+		}
+	}
+
+	return nil
 }
