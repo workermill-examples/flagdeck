@@ -9,7 +9,7 @@
     }
   });
 
-  let hoveredFeature = $state<number | null>(null);
+
 </script>
 
 <svelte:head>
@@ -161,8 +161,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 0)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-4"
@@ -192,8 +190,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 1)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mb-4"
@@ -223,8 +219,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 2)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mb-4"
@@ -254,8 +248,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 3)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mb-4"
@@ -285,8 +277,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 4)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center mb-4"
@@ -316,8 +306,6 @@
       <div
         class="relative rounded-xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200"
         role="article"
-        onmouseenter={() => (hoveredFeature = 5)}
-        onmouseleave={() => (hoveredFeature = null)}
       >
         <div
           class="w-10 h-10 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center mb-4"
