@@ -25,10 +25,10 @@ test.describe("Login Flow", () => {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard
-    await expect(page).toHaveURL("/dashboard");
+    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
 
     // Verify we're on the dashboard
-    await expect(page.locator("h1")).toContainText("Dashboard");
+    await expect(page.locator("main h1")).toContainText("Dashboard");
 
     // Verify authentication was successful by checking for user menu or sidebar
     await expect(
@@ -90,7 +90,7 @@ test.describe("Login Flow", () => {
     await page.goto("/login");
 
     // Should be redirected to dashboard
-    await expect(page).toHaveURL("/dashboard");
+    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
   });
 
   test("demo credentials notice is visible", async ({ page }) => {

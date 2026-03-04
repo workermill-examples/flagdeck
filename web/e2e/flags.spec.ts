@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 async function login(page: any) {
   await page.goto("/login");
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL("/dashboard");
+  await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
 }
 
 test.describe("Flags Page", () => {

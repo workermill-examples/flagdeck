@@ -121,12 +121,16 @@ class ApiClient {
     }
 
     if (!response.ok) {
+      let message: string;
       try {
         const errorData: ApiError = await response.json();
-        throw new Error(errorData.error.message);
+        message =
+          errorData.error?.message ||
+          `HTTP ${response.status}: ${response.statusText}`;
       } catch {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        message = `HTTP ${response.status}: ${response.statusText}`;
       }
+      throw new Error(message);
     }
 
     return response.json();

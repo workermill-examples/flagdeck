@@ -33,7 +33,7 @@
       >
         FD
       </div>
-      <h1 class="text-xl font-bold text-gray-900">FlagDeck</h1>
+      <span class="text-xl font-bold text-gray-900">FlagDeck</span>
     </a>
   </div>
 
