@@ -53,36 +53,21 @@ test.describe("Dashboard Page", () => {
       page.locator("main").locator("text=Running Experiments"),
     ).toBeVisible();
 
+    // Helper to get stat card value by label
+    async function getStatValue(label: string): Promise<number> {
+      const card = page
+        .locator(".bg-white.rounded-lg")
+        .filter({ hasText: label });
+      const value = await card.locator(".text-3xl").textContent();
+      return parseInt(value || "0");
+    }
+
     // Verify stat cards show non-zero values from seeded data
-    // Total Flags should be > 0 (spec mentions 10+ flags)
-    const totalFlagsValue = await page
-      .locator(':text("Total Flags") + * .text-3xl')
-      .textContent();
-    expect(parseInt(totalFlagsValue || "0")).toBeGreaterThan(0);
-
-    // Active Flags should be > 0
-    const activeFlagsValue = await page
-      .locator(':text("Active Flags") + * .text-3xl')
-      .textContent();
-    expect(parseInt(activeFlagsValue || "0")).toBeGreaterThan(0);
-
-    // Environments should be 3 (production, staging, development from spec)
-    const environmentsValue = await page
-      .locator(':text("Environments") + * .text-3xl')
-      .textContent();
-    expect(parseInt(environmentsValue || "0")).toBe(3);
-
-    // Total Experiments should be > 0 (spec mentions 2 experiments)
-    const totalExperimentsValue = await page
-      .locator(':text("Total Experiments") + * .text-3xl')
-      .textContent();
-    expect(parseInt(totalExperimentsValue || "0")).toBeGreaterThan(0);
-
-    // Running Experiments should be > 0 (spec mentions at least one running experiment)
-    const runningExperimentsValue = await page
-      .locator(':text("Running Experiments") + * .text-3xl')
-      .textContent();
-    expect(parseInt(runningExperimentsValue || "0")).toBeGreaterThan(0);
+    expect(await getStatValue("Total Flags")).toBeGreaterThan(0);
+    expect(await getStatValue("Active Flags")).toBeGreaterThan(0);
+    expect(await getStatValue("Environments")).toBe(3);
+    expect(await getStatValue("Total Experiments")).toBeGreaterThan(0);
+    expect(await getStatValue("Running Experiments")).toBeGreaterThan(0);
   });
 
   test("displays recent activity timeline with seeded data", async ({
@@ -130,10 +115,8 @@ test.describe("Dashboard Page", () => {
     });
 
     // Verify flags are displayed (should not be empty)
-    const flagEntries = page
-      .locator(".flex.items-center.justify-between")
-      .filter({ hasText: /^[a-z-]+$/ }); // Look for flag keys
-    const flagCount = await flagEntries.count();
+    const flagKeys = page.locator(".text-xs.text-gray-500.font-mono");
+    const flagCount = await flagKeys.count();
     expect(flagCount).toBeGreaterThan(0);
 
     // Verify environment status dots are shown

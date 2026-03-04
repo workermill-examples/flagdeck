@@ -103,10 +103,10 @@
   }
 
   // Filter entries client-side for more flexible action filtering since backend might not support partial matching
-  const filteredEntries = $derived(() => {
+  const filteredEntries = $derived.by(() => {
     if (!actionFilter) return entries;
 
-    return entries.filter(entry => {
+    return entries.filter((entry) => {
       if (actionFilter === "created") return entry.action.endsWith(".created");
       if (actionFilter === "updated") return entry.action.endsWith(".updated");
       if (actionFilter === "deleted") return entry.action.endsWith(".deleted");
@@ -134,7 +134,11 @@
     <div class="px-4 py-5 sm:p-6">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <div>
-          <label for="resource-filter" class="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+          <label
+            for="resource-filter"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Resource Type</label
+          >
           <select
             id="resource-filter"
             bind:value={resourceFilter}
@@ -148,7 +152,10 @@
         </div>
 
         <div>
-          <label for="action-filter" class="block text-sm font-medium text-gray-700 mb-1">Action</label>
+          <label
+            for="action-filter"
+            class="block text-sm font-medium text-gray-700 mb-1">Action</label
+          >
           <select
             id="action-filter"
             bind:value={actionFilter}
@@ -162,11 +169,17 @@
         </div>
 
         <div>
-          <label for="entries-per-page" class="block text-sm font-medium text-gray-700 mb-1">Per Page</label>
+          <label
+            for="entries-per-page"
+            class="block text-sm font-medium text-gray-700 mb-1">Per Page</label
+          >
           <select
             id="entries-per-page"
             bind:value={entriesPerPage}
-            onchange={() => { currentPage = 1; loadEntries(); }}
+            onchange={() => {
+              currentPage = 1;
+              loadEntries();
+            }}
             class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           >
             <option value={10}>10</option>
@@ -190,11 +203,17 @@
       {#if resourceFilter || actionFilter}
         <div class="mt-4 flex flex-wrap gap-2">
           {#if resourceFilter}
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Resource: {resourceOptions.find(r => r.value === resourceFilter)?.label}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+            >
+              Resource: {resourceOptions.find((r) => r.value === resourceFilter)
+                ?.label}
               <button
                 type="button"
-                onclick={() => { resourceFilter = ""; handleFilterChange(); }}
+                onclick={() => {
+                  resourceFilter = "";
+                  handleFilterChange();
+                }}
                 class="ml-1 text-blue-600 hover:text-blue-800"
               >
                 ×
@@ -202,11 +221,17 @@
             </span>
           {/if}
           {#if actionFilter}
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Action: {actionOptions.find(a => a.value === actionFilter)?.label}
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"
+            >
+              Action: {actionOptions.find((a) => a.value === actionFilter)
+                ?.label}
               <button
                 type="button"
-                onclick={() => { actionFilter = ""; handleFilterChange(); }}
+                onclick={() => {
+                  actionFilter = "";
+                  handleFilterChange();
+                }}
                 class="ml-1 text-green-600 hover:text-green-800"
               >
                 ×
@@ -222,8 +247,16 @@
   {#if error}
     <div class="rounded-md bg-red-50 p-4">
       <div class="flex">
-        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        <svg
+          class="h-5 w-5 text-red-400"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
         </svg>
         <div class="ml-3">
           <p class="text-sm text-red-800">{error}</p>
@@ -234,8 +267,16 @@
           onclick={() => (error = null)}
         >
           <span class="sr-only">Dismiss</span>
-          <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+          <svg
+            class="h-5 w-5 text-red-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
           </svg>
         </button>
       </div>
@@ -253,7 +294,10 @@
           {:else if filteredEntries.length === 0}
             No entries found
           {:else}
-            Showing {((currentPage - 1) * entriesPerPage) + 1}-{Math.min(currentPage * entriesPerPage, totalEntries)} of {totalEntries} entries
+            Showing {(currentPage - 1) * entriesPerPage + 1}-{Math.min(
+              currentPage * entriesPerPage,
+              totalEntries,
+            )} of {totalEntries} entries
           {/if}
         </div>
 
@@ -263,8 +307,18 @@
             onclick={loadEntries}
             class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              class="w-3 h-3 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Refresh
           </button>
@@ -275,9 +329,24 @@
       {#if loading}
         <div class="py-8 text-center">
           <div class="inline-flex items-center text-sm text-gray-500">
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              class="animate-spin -ml-1 mr-3 h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Loading audit log entries...
           </div>
@@ -308,8 +377,18 @@
               disabled={!hasPrevPage}
               class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-500 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M15 19l-7-7 7-7" />
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Previous
             </button>
@@ -319,15 +398,14 @@
               const startPage = Math.max(1, currentPage - 2);
               const endPage = Math.min(totalPages, startPage + 4);
               return Math.max(1, Math.min(endPage - 4, startPage)) + i;
-            }).filter(page => page <= totalPages) as page}
+            }).filter((page) => page <= totalPages) as page}
               <button
                 type="button"
                 onclick={() => goToPage(page)}
-                class="relative inline-flex items-center px-3 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 {
-                  page === currentPage
-                    ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                }"
+                class="relative inline-flex items-center px-3 py-2 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 {page ===
+                currentPage
+                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}"
               >
                 {page}
               </button>
@@ -341,8 +419,18 @@
               class="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-500 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-              <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M9 5l7 7-7 7" />
+              <svg
+                class="w-4 h-4 ml-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
