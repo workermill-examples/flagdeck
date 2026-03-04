@@ -107,7 +107,7 @@
     return entry.changes != null && typeof entry.changes === 'object' && Object.keys(entry.changes).length > 0;
   }
 
-  function formatChanges(changes: any): { field: string; before: string; after: string }[] {
+  function formatChanges(changes: unknown): { field: string; before: string; after: string }[] {
     if (!changes || typeof changes !== 'object') return [];
 
     const result: { field: string; before: string; after: string }[] = [];
