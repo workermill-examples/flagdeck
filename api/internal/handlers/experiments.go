@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/workermill-examples/flagdeck/api/internal/middleware"
 	"github.com/workermill-examples/flagdeck/api/internal/models"
 	"github.com/workermill-examples/flagdeck/api/internal/services"
 )
@@ -64,156 +65,95 @@ func NewExperimentsHandler(experimentsCollection *mongo.Collection, auditService
 	}
 }
 
-// GET /api/v1/experiments
+// ListExperiments handles GET /api/v1/experiments
 func (h *ExperimentsHandler) ListExperiments(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Get pagination parameters
+	limitStr := c.Query("limit", "50")
+	offsetStr := c.Query("offset", "0")
 
-	// Parse pagination parameters
-	page, _ := strconv.Atoi(c.Query("page", "1"))
-	if page < 1 {
-		page = 1
-	}
-	limit, _ := strconv.Atoi(c.Query("limit", "50"))
-	if limit < 1 || limit > 100 {
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil || limit <= 0 {
 		limit = 50
 	}
-	skip := (page - 1) * limit
+
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
 
 	// Get total count
-	totalCount, err := h.experimentsCollection.CountDocuments(ctx, bson.M{})
+	total, err := h.experimentsCollection.CountDocuments(context.Background(), bson.M{})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to count experiments",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to count experiments")
 	}
 
 	// Get experiments with pagination
 	opts := options.Find().
-		SetSort(bson.M{"created_at": -1}).
-		SetSkip(int64(skip)).
-		SetLimit(int64(limit))
+		SetLimit(limit).
+		SetSkip(offset).
+		SetSort(bson.M{"created_at": -1})
 
-	cursor, err := h.experimentsCollection.Find(ctx, bson.M{}, opts)
+	cursor, err := h.experimentsCollection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch experiments",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve experiments")
 	}
-	defer cursor.Close(ctx)
+	defer cursor.Close(context.Background())
 
 	var experiments []models.Experiment
-	if err = cursor.All(ctx, &experiments); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to decode experiments",
-			},
-		})
+	if err := cursor.All(context.Background(), &experiments); err != nil {
+		return middleware.NewDatabaseError("Failed to decode experiments")
 	}
 
 	if experiments == nil {
 		experiments = []models.Experiment{}
 	}
 
-	response := ExperimentsListResponse{
+	return c.JSON(ExperimentsListResponse{
 		Data:  experiments,
-		Total: totalCount,
-	}
-
-	return c.JSON(response)
+		Total: total,
+	})
 }
 
-// GET /api/v1/experiments/:key
+// GetExperiment handles GET /api/v1/experiments/:key
 func (h *ExperimentsHandler) GetExperiment(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	key := c.Params("key")
 	if key == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_REQUEST",
-				"message": "Experiment key is required",
-			},
-		})
+		return middleware.NewBadRequestError("Experiment key is required")
 	}
 
 	var experiment models.Experiment
-	err := h.experimentsCollection.FindOne(ctx, bson.M{"key": key}).Decode(&experiment)
+	err := h.experimentsCollection.FindOne(context.Background(), bson.M{"key": key}).Decode(&experiment)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "EXPERIMENT_NOT_FOUND",
-					"message": "Experiment not found",
-				},
-			})
+			return middleware.NewNotFoundError("Experiment not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve experiment")
 	}
 
 	return c.JSON(experiment)
 }
 
-// POST /api/v1/experiments
+// CreateExperiment handles POST /api/v1/experiments
 func (h *ExperimentsHandler) CreateExperiment(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	user := c.Locals("user").(middleware.UserContext)
 
 	var req CreateExperimentRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_JSON",
-				"message": "Invalid JSON in request body",
-			},
-		})
+		return middleware.NewBadRequestError("Invalid request body")
 	}
 
 	// Validate required fields
 	if req.Key == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Key is required",
-			},
-		})
+		return middleware.NewValidationError("Experiment key is required")
 	}
 	if req.Name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Name is required",
-			},
-		})
+		return middleware.NewValidationError("Experiment name is required")
 	}
 	if req.FlagKey == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Flag key is required",
-			},
-		})
+		return middleware.NewValidationError("Flag key is required")
 	}
 	if req.Environment == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Environment is required",
-			},
-		})
+		return middleware.NewValidationError("Environment is required")
 	}
 
 	// Validate status
@@ -226,31 +166,16 @@ func (h *ExperimentsHandler) CreateExperiment(c *fiber.Ctx) error {
 		}
 	}
 	if !validStatus {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Status must be one of: draft, running, paused, completed",
-			},
-		})
+		return middleware.NewValidationError("Status must be one of: draft, running, paused, completed")
 	}
 
-	// Check if experiment key already exists
-	count, err := h.experimentsCollection.CountDocuments(ctx, bson.M{"key": req.Key})
+	// Check if experiment with this key already exists
+	count, err := h.experimentsCollection.CountDocuments(context.Background(), bson.M{"key": req.Key})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to check experiment existence",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to check existing experiment")
 	}
 	if count > 0 {
-		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "EXPERIMENT_EXISTS",
-				"message": "Experiment with this key already exists",
-			},
-		})
+		return middleware.NewConflictError("Experiment with this key already exists")
 	}
 
 	// Initialize variants and results if not provided
@@ -264,6 +189,7 @@ func (h *ExperimentsHandler) CreateExperiment(c *fiber.Ctx) error {
 		results = make(map[string]interface{})
 	}
 
+	now := time.Now()
 	experiment := models.Experiment{
 		ID:          primitive.NewObjectID(),
 		Key:         req.Key,
@@ -276,91 +202,66 @@ func (h *ExperimentsHandler) CreateExperiment(c *fiber.Ctx) error {
 		EndDate:     req.EndDate,
 		Variants:    variants,
 		Results:     results,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 
-	_, err = h.experimentsCollection.InsertOne(ctx, experiment)
+	_, err = h.experimentsCollection.InsertOne(context.Background(), experiment)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to create experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to create experiment")
 	}
 
 	// Log audit entry
-	user := c.Locals("user").(*models.User)
-	h.auditService.LogCreate("experiment", experiment.Key, user.ID, user.Email, map[string]interface{}{
+	changes := map[string]interface{}{
+		"key":         experiment.Key,
 		"name":        experiment.Name,
 		"flag_key":    experiment.FlagKey,
 		"environment": experiment.Environment,
 		"status":      experiment.Status,
-	})
+	}
+	h.auditService.LogCreate("experiment", experiment.Key, user.ID, user.Email, changes)
 
 	return c.Status(fiber.StatusCreated).JSON(experiment)
 }
 
-// PUT /api/v1/experiments/:key
+// UpdateExperiment handles PUT /api/v1/experiments/:key
 func (h *ExperimentsHandler) UpdateExperiment(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	user := c.Locals("user").(middleware.UserContext)
 	key := c.Params("key")
+
 	if key == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_REQUEST",
-				"message": "Experiment key is required",
-			},
-		})
+		return middleware.NewBadRequestError("Experiment key is required")
 	}
 
 	var req UpdateExperimentRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_JSON",
-				"message": "Invalid JSON in request body",
-			},
-		})
+		return middleware.NewBadRequestError("Invalid request body")
 	}
 
-	// Check if experiment exists
+	// Get existing experiment
 	var existingExperiment models.Experiment
-	err := h.experimentsCollection.FindOne(ctx, bson.M{"key": key}).Decode(&existingExperiment)
+	err := h.experimentsCollection.FindOne(context.Background(), bson.M{"key": key}).Decode(&existingExperiment)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "EXPERIMENT_NOT_FOUND",
-					"message": "Experiment not found",
-				},
-			})
+			return middleware.NewNotFoundError("Experiment not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve experiment")
 	}
 
 	// Build update document
-	updateDoc := bson.M{"updated_at": time.Now()}
+	update := bson.M{"$set": bson.M{"updated_at": time.Now()}}
 
 	if req.Name != nil {
-		updateDoc["name"] = *req.Name
+		update["$set"].(bson.M)["name"] = *req.Name
 	}
 	if req.Description != nil {
-		updateDoc["description"] = *req.Description
+		update["$set"].(bson.M)["description"] = *req.Description
 	}
 	if req.FlagKey != nil {
-		updateDoc["flag_key"] = *req.FlagKey
+		update["$set"].(bson.M)["flag_key"] = *req.FlagKey
 	}
 	if req.Environment != nil {
-		updateDoc["environment"] = *req.Environment
+		update["$set"].(bson.M)["environment"] = *req.Environment
 	}
 	if req.Status != nil {
 		// Validate status
@@ -373,180 +274,130 @@ func (h *ExperimentsHandler) UpdateExperiment(c *fiber.Ctx) error {
 			}
 		}
 		if !validStatus {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "VALIDATION_ERROR",
-					"message": "Status must be one of: draft, running, paused, completed",
-				},
-			})
+			return middleware.NewValidationError("Status must be one of: draft, running, paused, completed")
 		}
-		updateDoc["status"] = *req.Status
+		update["$set"].(bson.M)["status"] = *req.Status
 	}
 	if req.StartDate != nil {
-		updateDoc["start_date"] = *req.StartDate
+		update["$set"].(bson.M)["start_date"] = *req.StartDate
 	}
 	if req.EndDate != nil {
-		updateDoc["end_date"] = *req.EndDate
+		update["$set"].(bson.M)["end_date"] = *req.EndDate
 	}
 	if req.Variants != nil {
-		updateDoc["variants"] = req.Variants
+		update["$set"].(bson.M)["variants"] = req.Variants
 	}
 	if req.Results != nil {
-		updateDoc["results"] = req.Results
+		update["$set"].(bson.M)["results"] = req.Results
 	}
 
-	_, err = h.experimentsCollection.UpdateOne(ctx, bson.M{"key": key}, bson.M{"$set": updateDoc})
+	result, err := h.experimentsCollection.UpdateOne(
+		context.Background(),
+		bson.M{"key": key},
+		update,
+	)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to update experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to update experiment")
+	}
+	if result.MatchedCount == 0 {
+		return middleware.NewNotFoundError("Experiment not found")
 	}
 
 	// Get updated experiment
 	var updatedExperiment models.Experiment
-	err = h.experimentsCollection.FindOne(ctx, bson.M{"key": key}).Decode(&updatedExperiment)
+	err = h.experimentsCollection.FindOne(context.Background(), bson.M{"key": key}).Decode(&updatedExperiment)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch updated experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve updated experiment")
 	}
 
 	// Log audit entry
-	user := c.Locals("user").(*models.User)
-	changes := make(map[string]interface{})
-	for field, value := range updateDoc {
-		if field != "updated_at" {
-			changes[field] = value
-		}
+	beforeData := map[string]interface{}{
+		"name":        existingExperiment.Name,
+		"description": existingExperiment.Description,
+		"flag_key":    existingExperiment.FlagKey,
+		"environment": existingExperiment.Environment,
+		"status":      existingExperiment.Status,
 	}
-	h.auditService.LogUpdate("experiment", key, user.ID, user.Email, map[string]interface{}{}, changes)
+	afterData := map[string]interface{}{
+		"name":        updatedExperiment.Name,
+		"description": updatedExperiment.Description,
+		"flag_key":    updatedExperiment.FlagKey,
+		"environment": updatedExperiment.Environment,
+		"status":      updatedExperiment.Status,
+	}
+	h.auditService.LogUpdate("experiment", key, user.ID, user.Email, beforeData, afterData)
 
 	return c.JSON(updatedExperiment)
 }
 
-// DELETE /api/v1/experiments/:key
+// DeleteExperiment handles DELETE /api/v1/experiments/:key
 func (h *ExperimentsHandler) DeleteExperiment(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+	user := c.Locals("user").(middleware.UserContext)
 	key := c.Params("key")
+
 	if key == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_REQUEST",
-				"message": "Experiment key is required",
-			},
-		})
+		return middleware.NewBadRequestError("Experiment key is required")
 	}
 
-	// Check if experiment exists
-	var experiment models.Experiment
-	err := h.experimentsCollection.FindOne(ctx, bson.M{"key": key}).Decode(&experiment)
+	// Get existing experiment for audit
+	var existingExperiment models.Experiment
+	err := h.experimentsCollection.FindOne(context.Background(), bson.M{"key": key}).Decode(&existingExperiment)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "EXPERIMENT_NOT_FOUND",
-					"message": "Experiment not found",
-				},
-			})
+			return middleware.NewNotFoundError("Experiment not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to retrieve experiment")
 	}
 
-	_, err = h.experimentsCollection.DeleteOne(ctx, bson.M{"key": key})
+	result, err := h.experimentsCollection.DeleteOne(context.Background(), bson.M{"key": key})
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to delete experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to delete experiment")
+	}
+	if result.DeletedCount == 0 {
+		return middleware.NewNotFoundError("Experiment not found")
 	}
 
 	// Log audit entry
-	user := c.Locals("user").(*models.User)
-	h.auditService.LogDelete("experiment", key, user.ID, user.Email, map[string]interface{}{
-		"name":        experiment.Name,
-		"flag_key":    experiment.FlagKey,
-		"environment": experiment.Environment,
-	})
+	deletedData := map[string]interface{}{
+		"key":         existingExperiment.Key,
+		"name":        existingExperiment.Name,
+		"flag_key":    existingExperiment.FlagKey,
+		"environment": existingExperiment.Environment,
+		"status":      existingExperiment.Status,
+	}
+	h.auditService.LogDelete("experiment", key, user.ID, user.Email, deletedData)
 
-	return c.Status(fiber.StatusNoContent).Send(nil)
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
-// POST /api/v1/experiments/:key/track
+// TrackExperiment handles POST /api/v1/experiments/:key/track
 func (h *ExperimentsHandler) TrackExperiment(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	key := c.Params("key")
 	if key == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_REQUEST",
-				"message": "Experiment key is required",
-			},
-		})
+		return middleware.NewBadRequestError("Experiment key is required")
 	}
 
 	var req TrackExperimentRequest
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "INVALID_JSON",
-				"message": "Invalid JSON in request body",
-			},
-		})
+		return middleware.NewBadRequestError("Invalid request body")
 	}
 
 	// Validate required fields
 	if req.UserID == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "User ID is required",
-			},
-		})
+		return middleware.NewValidationError("User ID is required")
 	}
 	if req.VariantName == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VALIDATION_ERROR",
-				"message": "Variant name is required",
-			},
-		})
+		return middleware.NewValidationError("Variant name is required")
 	}
 
 	// Check if experiment exists
 	var experiment models.Experiment
-	err := h.experimentsCollection.FindOne(ctx, bson.M{"key": key}).Decode(&experiment)
+	err := h.experimentsCollection.FindOne(context.Background(), bson.M{"key": key}).Decode(&experiment)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": fiber.Map{
-					"code":    "EXPERIMENT_NOT_FOUND",
-					"message": "Experiment not found",
-				},
-			})
+			return middleware.NewNotFoundError("Experiment not found")
 		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to fetch experiment",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to fetch experiment")
 	}
 
 	// Verify variant exists
@@ -558,12 +409,7 @@ func (h *ExperimentsHandler) TrackExperiment(c *fiber.Ctx) error {
 		}
 	}
 	if !variantExists {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "VARIANT_NOT_FOUND",
-				"message": "Variant not found in experiment",
-			},
-		})
+		return middleware.NewBadRequestError("Variant not found in experiment")
 	}
 
 	// Initialize results if not present
@@ -603,7 +449,7 @@ func (h *ExperimentsHandler) TrackExperiment(c *fiber.Ctx) error {
 
 	// Update experiment in database
 	_, err = h.experimentsCollection.UpdateOne(
-		ctx,
+		context.Background(),
 		bson.M{"key": key},
 		bson.M{
 			"$set": bson.M{
@@ -613,12 +459,7 @@ func (h *ExperimentsHandler) TrackExperiment(c *fiber.Ctx) error {
 		},
 	)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":    "DATABASE_ERROR",
-				"message": "Failed to update experiment results",
-			},
-		})
+		return middleware.NewDatabaseError("Failed to update experiment results")
 	}
 
 	// Return tracking confirmation
