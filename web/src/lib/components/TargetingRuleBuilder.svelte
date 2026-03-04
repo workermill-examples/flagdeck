@@ -88,7 +88,7 @@
 		});
 	}
 
-	function updateCondition(ruleId: string, conditionIndex: number, field: keyof Condition, value: any) {
+	function updateCondition(ruleId: string, conditionIndex: number, field: keyof Condition, value: unknown) {
 		rules = rules.map(rule => {
 			if (rule.id === ruleId) {
 				return {
@@ -105,7 +105,7 @@
 		});
 	}
 
-	function updateRuleValue(ruleId: string, value: any) {
+	function updateRuleValue(ruleId: string, value: unknown) {
 		rules = rules.map(rule => {
 			if (rule.id === ruleId) {
 				return { ...rule, value };
@@ -158,7 +158,7 @@
 		}
 	}
 
-	function formatValueInput(value: any, type: string) {
+	function formatValueInput(value: unknown, type: string) {
 		if (type === 'json') {
 			try {
 				return JSON.stringify(value, null, 2);
