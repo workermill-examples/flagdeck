@@ -633,128 +633,161 @@ func seedExperiments(ctx context.Context, mongodb *database.MongoDB) {
 func seedAuditLog(ctx context.Context, mongodb *database.MongoDB, userID primitive.ObjectID) {
 	auditCollection := mongodb.AuditLogCollection()
 
-	// Generate 50+ audit entries spread across 14 business days
+	// Generate 60+ audit entries spread across 14 days (business hours)
+	// This ensures we exceed the 50+ requirement with realistic activity patterns
 	baseTime := time.Now().AddDate(0, 0, -14)
 
 	auditEntries := []models.AuditLogEntry{}
 
-	// Day 1: Initial setup
+	// Day 1: Initial setup (4 entries)
 	day1 := baseTime
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "environment", "development", "Environment created", day1.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "environment", "staging", "Environment created", day1.Add(9*time.Hour+15*time.Minute)),
-		createAuditEntry(userID, "create", "environment", "production", "Environment created", day1.Add(9*time.Hour+30*time.Minute)),
-		createAuditEntry(userID, "create", "api_key", "dev-key-1", "Development API key created", day1.Add(10*time.Hour)),
+		createAuditEntry(userID, "environment.created", "environment", "development", "Development environment created", day1.Add(9*time.Hour)),
+		createAuditEntry(userID, "environment.created", "environment", "staging", "Staging environment created", day1.Add(9*time.Hour+15*time.Minute)),
+		createAuditEntry(userID, "environment.created", "environment", "production", "Production environment created", day1.Add(9*time.Hour+30*time.Minute)),
+		createAuditEntry(userID, "api_key.created", "api_key", "dev-key-1", "Development API key created", day1.Add(10*time.Hour)),
 	)
 
-	// Day 2: Flag creation
+	// Day 2: Flag creation and initial configuration (6 entries)
 	day2 := baseTime.AddDate(0, 0, 1)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "new_dashboard", "Flag created", day2.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "flag", "api_rate_limit", "Flag created", day2.Add(10*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "new_dashboard", "Flag updated", day2.Add(14*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "new_dashboard", "New Dashboard flag created", day2.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "api_rate_limit", "API Rate Limit flag created", day2.Add(9*time.Hour+30*time.Minute)),
+		createAuditEntry(userID, "flag.updated", "flag", "new_dashboard", "Targeting rules configured for new_dashboard", day2.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "new_dashboard", "Enabled new_dashboard in staging", day2.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "api_rate_limit", "Rate limit values configured", day2.Add(14*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "api_rate_limit", "Enabled api_rate_limit in production", day2.Add(15*time.Hour)),
 	)
 
-	// Day 3: Segment creation
+	// Day 3: Segment and user management (4 entries)
 	day3 := baseTime.AddDate(0, 0, 2)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "segment", "premium_users", "Segment created", day3.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "segment", "beta_testers", "Segment created", day3.Add(11*time.Hour)),
+		createAuditEntry(userID, "segment.created", "segment", "premium_users", "Premium Users segment created", day3.Add(9*time.Hour)),
+		createAuditEntry(userID, "segment.created", "segment", "beta_testers", "Beta Testers segment created", day3.Add(10*time.Hour)),
+		createAuditEntry(userID, "segment.updated", "segment", "premium_users", "Updated segment rules for premium users", day3.Add(11*time.Hour)),
+		createAuditEntry(userID, "api_key.created", "api_key", "staging-key-1", "Staging API key created", day3.Add(14*time.Hour)),
 	)
 
-	// Day 4: More flags and experiments
+	// Day 4: More flags and experiments (5 entries)
 	day4 := baseTime.AddDate(0, 0, 3)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "feature_announcements", "Flag created", day4.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "experiment", "dashboard_layout_test", "Experiment created", day4.Add(15*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "feature_announcements", "Feature Announcements flag created", day4.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "experimental_search", "Experimental Search flag created", day4.Add(10*time.Hour)),
+		createAuditEntry(userID, "experiment.created", "experiment", "dashboard_layout_test", "Dashboard layout A/B test created", day4.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "feature_announcements", "Enabled feature announcements in staging", day4.Add(14*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "dashboard_layout_test", "Updated experiment traffic allocation", day4.Add(15*time.Hour)),
 	)
 
-	// Day 5: Flag toggles and updates
+	// Day 5: Flag toggles and configuration updates (6 entries)
 	day5 := baseTime.AddDate(0, 0, 4)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "toggle", "flag", "new_dashboard", "Flag toggled", day5.Add(9*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "api_rate_limit", "Flag configuration updated", day5.Add(13*time.Hour)),
-		createAuditEntry(userID, "toggle", "flag", "experimental_search", "Flag toggled", day5.Add(16*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "new_dashboard", "Enabled new_dashboard in production with 10% rollout", day5.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "api_rate_limit", "Updated rate limit for premium tier", day5.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "experimental_search", "Enabled experimental search in staging", day5.Add(13*time.Hour)),
+		createAuditEntry(userID, "segment.updated", "segment", "beta_testers", "Added account age requirement to beta testers", day5.Add(14*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "experimental_search", "Configured targeting rules for search algorithm", day5.Add(15*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "feature_announcements", "Disabled feature announcements in production", day5.Add(16*time.Hour)),
 	)
 
-	// Day 6: Weekend - fewer activities
+	// Day 6: Weekend - lighter activity (2 entries)
 	day6 := baseTime.AddDate(0, 0, 5)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "maintenance_mode", "Flag created", day6.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "maintenance_mode", "Maintenance Mode flag created", day6.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "maintenance_mode", "Configured maintenance mode settings", day6.Add(11*time.Hour)),
 	)
 
-	// Day 8: More activity (skipping day 7 - weekend)
+	// Day 8: Heavy activity day (7 entries) - skipping day 7 (weekend)
 	day8 := baseTime.AddDate(0, 0, 7)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "api_key", "prod-key-1", "Production API key created", day8.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "segment", "enterprise_clients", "Segment created", day8.Add(10*time.Hour)),
-		createAuditEntry(userID, "update", "experiment", "dashboard_layout_test", "Experiment updated", day8.Add(14*time.Hour)),
+		createAuditEntry(userID, "api_key.created", "api_key", "prod-key-1", "Production API key created", day8.Add(9*time.Hour)),
+		createAuditEntry(userID, "segment.created", "segment", "enterprise_clients", "Enterprise Clients segment created", day8.Add(10*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "dashboard_layout_test", "Updated experiment targeting", day8.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "theme_config", "Theme Configuration flag created", day8.Add(12*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "theme_config", "Configured theme colors and settings", day8.Add(13*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "theme_config", "Enabled theme config in all environments", day8.Add(14*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "dashboard_layout_test", "Experiment started - traffic split activated", day8.Add(16*time.Hour)),
 	)
 
-	// Day 9: Flag management
+	// Day 9: Flag management and refinement (5 entries)
 	day9 := baseTime.AddDate(0, 0, 8)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "theme_config", "Flag created", day9.Add(9*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "feature_announcements", "Flag updated", day9.Add(11*time.Hour)),
-		createAuditEntry(userID, "toggle", "flag", "maintenance_mode", "Flag toggled", day9.Add(15*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "new_dashboard", "Increased rollout to 25% in production", day9.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "feature_announcements", "Updated announcement message content", day9.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "maintenance_mode", "Temporarily enabled maintenance mode", day9.Add(12*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "maintenance_mode", "Disabled maintenance mode", day9.Add(12*time.Hour+30*time.Minute)),
+		createAuditEntry(userID, "segment.updated", "segment", "enterprise_clients", "Refined enterprise client criteria", day9.Add(15*time.Hour)),
 	)
 
-	// Day 10: Experiment management
+	// Day 10: Experiment management and new features (6 entries)
 	day10 := baseTime.AddDate(0, 0, 9)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "experiment", "search_algorithm_test", "Experiment created", day10.Add(9*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "theme_config", "Flag configuration updated", day10.Add(13*time.Hour)),
+		createAuditEntry(userID, "experiment.created", "experiment", "search_algorithm_test", "Search algorithm performance test created", day10.Add(9*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "search_algorithm_test", "Configured search experiment variants", day10.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "theme_config", "Updated theme configuration values", day10.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "mobile_app_upsell", "Mobile App Upsell flag created", day10.Add(13*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "mobile_app_upsell", "Configured mobile upsell targeting", day10.Add(14*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "mobile_app_upsell", "Enabled mobile upsell in staging", day10.Add(15*time.Hour)),
 	)
 
-	// Day 11: More flags
+	// Day 11: Feature additions and testing (5 entries)
 	day11 := baseTime.AddDate(0, 0, 10)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "mobile_app_upsell", "Flag created", day11.Add(9*time.Hour)),
-		createAuditEntry(userID, "create", "flag", "support_chat_widget", "Flag created", day11.Add(11*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "new_dashboard", "Flag updated", day11.Add(14*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "support_chat_widget", "Support Chat Widget flag created", day11.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "max_upload_size", "Max Upload Size flag created", day11.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "support_chat_widget", "Configured chat widget settings", day11.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "max_upload_size", "Set different upload limits per environment", day11.Add(13*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "new_dashboard", "Updated dashboard feature rollout to 50%", day11.Add(14*time.Hour)),
 	)
 
-	// Day 12: Configuration updates
+	// Day 12: Configuration refinements (4 entries)
 	day12 := baseTime.AddDate(0, 0, 11)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "max_upload_size", "Flag created", day12.Add(9*time.Hour)),
-		createAuditEntry(userID, "toggle", "flag", "experimental_search", "Flag toggled", day12.Add(12*time.Hour)),
-		createAuditEntry(userID, "update", "experiment", "search_algorithm_test", "Experiment results updated", day12.Add(16*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "experimental_search", "Enabled experimental search in production with 25% rollout", day12.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "support_chat_widget", "Enabled support chat in staging", day12.Add(11*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "search_algorithm_test", "Updated experiment results and metrics", day12.Add(12*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "dashboard_layout_test", "Recorded conversion metrics", day12.Add(16*time.Hour)),
 	)
 
-	// Day 13: Beta features and cleanup
+	// Day 13: Beta features and optimization (4 entries)
 	day13 := baseTime.AddDate(0, 0, 12)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "beta_features", "Flag created", day13.Add(9*time.Hour)),
-		createAuditEntry(userID, "update", "segment", "beta_testers", "Segment rules updated", day13.Add(11*time.Hour)),
-		createAuditEntry(userID, "toggle", "flag", "feature_announcements", "Flag toggled", day13.Add(15*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "beta_features", "Beta Features flag created", day13.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "beta_features", "Configured beta feature access rules", day13.Add(10*time.Hour)),
+		createAuditEntry(userID, "segment.updated", "segment", "beta_testers", "Updated beta tester segment criteria", day13.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "feature_announcements", "Re-enabled feature announcements with updated content", day13.Add(15*time.Hour)),
 	)
 
-	// Day 14: Recent activity
+	// Day 14: Recent activity and final touches (6 entries)
 	day14 := baseTime.AddDate(0, 0, 13)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "create", "flag", "welcome_message", "Flag created", day14.Add(9*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "api_rate_limit", "Rate limit adjusted", day14.Add(10*time.Hour)),
-		createAuditEntry(userID, "update", "flag", "theme_config", "Theme colors updated", day14.Add(14*time.Hour)),
-		createAuditEntry(userID, "toggle", "flag", "mobile_app_upsell", "Flag toggled", day14.Add(16*time.Hour)),
+		createAuditEntry(userID, "flag.created", "flag", "welcome_message", "Welcome Message flag created", day14.Add(9*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "welcome_message", "Configured personalized welcome messages", day14.Add(9*time.Hour+30*time.Minute)),
+		createAuditEntry(userID, "flag.updated", "flag", "api_rate_limit", "Adjusted rate limits based on usage patterns", day14.Add(10*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "theme_config", "Updated theme colors for better accessibility", day14.Add(11*time.Hour)),
+		createAuditEntry(userID, "flag.toggled", "flag", "mobile_app_upsell", "Enabled mobile upsell in production", day14.Add(14*time.Hour)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "search_algorithm_test", "Completed search experiment - analyzed results", day14.Add(16*time.Hour)),
 	)
 
-	// Add a few more recent entries
-	recent := time.Now().Add(-2 * time.Hour)
+	// Add recent entries for today (3 entries)
+	recent := time.Now().Add(-3 * time.Hour)
 	auditEntries = append(auditEntries,
-		createAuditEntry(userID, "update", "experiment", "dashboard_layout_test", "Experiment metrics updated", recent),
-		createAuditEntry(userID, "toggle", "flag", "beta_features", "Flag toggled", recent.Add(30*time.Minute)),
+		createAuditEntry(userID, "experiment.updated", "experiment", "dashboard_layout_test", "Updated experiment metrics and analysis", recent),
+		createAuditEntry(userID, "flag.toggled", "flag", "beta_features", "Enabled beta features for qualified users", recent.Add(1*time.Hour)),
+		createAuditEntry(userID, "flag.updated", "flag", "new_dashboard", "Increased production rollout to 75% based on positive metrics", recent.Add(2*time.Hour)),
 	)
 
-	// Upsert all audit entries
+	// Use full upsert (not $setOnInsert) so data gets refreshed on each deploy
 	for i, entry := range auditEntries {
+		// Create a unique composite filter for each audit entry
 		filter := bson.M{
+			"user_id":     entry.UserID,
 			"resource":    entry.Resource,
 			"resource_id": entry.ResourceID,
 			"action":      entry.Action,
 			"timestamp":   entry.Timestamp,
 		}
-		update := bson.M{"$setOnInsert": entry}
+		// Use $set for full upsert - updates existing entries with fresh data
+		update := bson.M{"$set": entry}
 		opts := options.Update().SetUpsert(true)
 
 		_, err := auditCollection.UpdateOne(ctx, filter, update, opts)
@@ -763,7 +796,7 @@ func seedAuditLog(ctx context.Context, mongodb *database.MongoDB, userID primiti
 		}
 	}
 
-	log.Printf("Upserted %d audit log entries", len(auditEntries))
+	log.Printf("Upserted %d audit log entries across 14 days", len(auditEntries))
 }
 
 // Helper functions
@@ -881,9 +914,11 @@ func createAuditEntry(userID primitive.ObjectID, action, resource, resourceID, d
 		UserEmail:  "demo@workermill.com",
 		Changes: map[string]interface{}{
 			"description": description,
+			"timestamp":   timestamp.Format(time.RFC3339),
 		},
 		Metadata: map[string]interface{}{
-			"source": "seed_script",
+			"source":      "seed_script",
+			"environment": "seeded_data",
 		},
 		Timestamp: timestamp,
 	}
