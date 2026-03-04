@@ -218,6 +218,7 @@
 									type="button"
 									onclick={() => moveRule(rule.id, 'up')}
 									disabled={ruleIndex === 0}
+									aria-label="Move rule up"
 									class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -228,6 +229,7 @@
 									type="button"
 									onclick={() => moveRule(rule.id, 'down')}
 									disabled={ruleIndex === rules.length - 1}
+									aria-label="Move rule down"
 									class="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -247,7 +249,7 @@
 
 					<div class="space-y-3">
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Conditions (ALL must match)</label>
+							<h4 class="block text-sm font-medium text-gray-700 mb-2">Conditions (ALL must match)</h4>
 							<div class="space-y-2">
 								{#each rule.conditions as condition, conditionIndex}
 									<div class="flex items-center space-x-2">
@@ -278,6 +280,7 @@
 											<button
 												type="button"
 												onclick={() => removeCondition(rule.id, conditionIndex)}
+												aria-label="Remove condition"
 												class="p-2 text-red-600 hover:text-red-800"
 											>
 												<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -298,7 +301,7 @@
 						</div>
 
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-2">Return Value</label>
+							<h4 class="block text-sm font-medium text-gray-700 mb-2">Return Value</h4>
 							{#if flag.type === 'boolean'}
 								<select
 									value={rule.value}

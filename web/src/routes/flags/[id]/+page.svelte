@@ -306,7 +306,7 @@
 					<h2 class="text-lg font-medium text-gray-900 mb-4">Default Value</h2>
 					<div class="space-y-4">
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+							<h4 class="block text-sm font-medium text-gray-700 mb-1">Type</h4>
 							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
 								{flag.type === 'boolean' ? 'bg-blue-100 text-blue-800' :
 								flag.type === 'string' ? 'bg-green-100 text-green-800' :
@@ -316,7 +316,7 @@
 							</span>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Value</label>
+							<h4 class="block text-sm font-medium text-gray-700 mb-1">Value</h4>
 							<div class="mt-1 p-3 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-900 font-mono">
 								{formatValue(flag.default_value)}
 							</div>

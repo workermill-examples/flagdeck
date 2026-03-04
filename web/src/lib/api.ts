@@ -4,6 +4,13 @@ import type {
   ApiResponse,
   AuthResponse,
   RefreshRequest,
+  Flag,
+  Environment,
+  Segment,
+  Experiment,
+  ApiKey,
+  AuditLogEntry,
+  User,
 } from "./types.js";
 
 class ApiClient {
@@ -157,8 +164,8 @@ class ApiClient {
     this.clearTokens();
   }
 
-  async getCurrentUser() {
-    return this.request("/auth/me", { method: "GET" }, true);
+  async getCurrentUser(): Promise<User> {
+    return this.request<User>("/auth/me", { method: "GET" }, true);
   }
 
   // Data methods
@@ -193,107 +200,111 @@ class ApiClient {
   }
 
   // Flag methods
-  async getFlags(): Promise<ApiResponse<any[]>> {
-    return this.get("/api/v1/flags");
+  async getFlags(): Promise<ApiResponse<Flag[]>> {
+    return this.get<ApiResponse<Flag[]>>("/api/v1/flags");
   }
 
-  async getFlag(key: string) {
-    return this.get(`/api/v1/flags/${key}`);
+  async getFlag(key: string): Promise<Flag> {
+    return this.get<Flag>(`/api/v1/flags/${key}`);
   }
 
-  async createFlag(data: unknown) {
-    return this.post("/api/v1/flags", data);
+  async createFlag(data: unknown): Promise<Flag> {
+    return this.post<Flag>("/api/v1/flags", data);
   }
 
-  async updateFlag(key: string, data: unknown) {
-    return this.put(`/api/v1/flags/${key}`, data);
+  async updateFlag(key: string, data: unknown): Promise<Flag> {
+    return this.put<Flag>(`/api/v1/flags/${key}`, data);
   }
 
-  async deleteFlag(key: string) {
-    return this.delete(`/api/v1/flags/${key}`);
+  async deleteFlag(key: string): Promise<void> {
+    return this.delete<void>(`/api/v1/flags/${key}`);
   }
 
-  async toggleFlag(key: string, environment?: string) {
+  async toggleFlag(key: string, environment?: string): Promise<Flag> {
     const body = environment ? { environment } : {};
-    return this.post(`/api/v1/flags/${key}/toggle`, body);
+    return this.post<Flag>(`/api/v1/flags/${key}/toggle`, body);
   }
 
   // Environment methods
-  async getEnvironments(): Promise<ApiResponse<any[]>> {
-    return this.get("/api/v1/environments");
+  async getEnvironments(): Promise<ApiResponse<Environment[]>> {
+    return this.get<ApiResponse<Environment[]>>("/api/v1/environments");
   }
 
-  async createEnvironment(data: unknown) {
-    return this.post("/api/v1/environments", data);
+  async createEnvironment(data: unknown): Promise<Environment> {
+    return this.post<Environment>("/api/v1/environments", data);
   }
 
-  async updateEnvironment(key: string, data: unknown) {
-    return this.put(`/api/v1/environments/${key}`, data);
+  async updateEnvironment(key: string, data: unknown): Promise<Environment> {
+    return this.put<Environment>(`/api/v1/environments/${key}`, data);
   }
 
-  async deleteEnvironment(key: string) {
-    return this.delete(`/api/v1/environments/${key}`);
+  async deleteEnvironment(key: string): Promise<void> {
+    return this.delete<void>(`/api/v1/environments/${key}`);
   }
 
   // Segment methods
-  async getSegments(): Promise<ApiResponse<any[]>> {
-    return this.get("/api/v1/segments");
+  async getSegments(): Promise<ApiResponse<Segment[]>> {
+    return this.get<ApiResponse<Segment[]>>("/api/v1/segments");
   }
 
-  async getSegment(key: string) {
-    return this.get(`/api/v1/segments/${key}`);
+  async getSegment(key: string): Promise<Segment> {
+    return this.get<Segment>(`/api/v1/segments/${key}`);
   }
 
-  async createSegment(data: unknown) {
-    return this.post("/api/v1/segments", data);
+  async createSegment(data: unknown): Promise<Segment> {
+    return this.post<Segment>("/api/v1/segments", data);
   }
 
-  async updateSegment(key: string, data: unknown) {
-    return this.put(`/api/v1/segments/${key}`, data);
+  async updateSegment(key: string, data: unknown): Promise<Segment> {
+    return this.put<Segment>(`/api/v1/segments/${key}`, data);
   }
 
-  async deleteSegment(key: string) {
-    return this.delete(`/api/v1/segments/${key}`);
+  async deleteSegment(key: string): Promise<void> {
+    return this.delete<void>(`/api/v1/segments/${key}`);
   }
 
   // Experiment methods
-  async getExperiments(): Promise<ApiResponse<any[]>> {
-    return this.get("/api/v1/experiments");
+  async getExperiments(): Promise<ApiResponse<Experiment[]>> {
+    return this.get<ApiResponse<Experiment[]>>("/api/v1/experiments");
   }
 
-  async getExperiment(key: string) {
-    return this.get(`/api/v1/experiments/${key}`);
+  async getExperiment(key: string): Promise<Experiment> {
+    return this.get<Experiment>(`/api/v1/experiments/${key}`);
   }
 
-  async createExperiment(data: unknown) {
-    return this.post("/api/v1/experiments", data);
+  async createExperiment(data: unknown): Promise<Experiment> {
+    return this.post<Experiment>("/api/v1/experiments", data);
   }
 
-  async updateExperiment(key: string, data: unknown) {
-    return this.put(`/api/v1/experiments/${key}`, data);
+  async updateExperiment(key: string, data: unknown): Promise<Experiment> {
+    return this.put<Experiment>(`/api/v1/experiments/${key}`, data);
   }
 
-  async deleteExperiment(key: string) {
-    return this.delete(`/api/v1/experiments/${key}`);
+  async deleteExperiment(key: string): Promise<void> {
+    return this.delete<void>(`/api/v1/experiments/${key}`);
   }
 
   // API Key methods
-  async getApiKeys(): Promise<ApiResponse<any[]>> {
-    return this.get("/api/v1/api-keys");
+  async getApiKeys(): Promise<ApiResponse<ApiKey[]>> {
+    return this.get<ApiResponse<ApiKey[]>>("/api/v1/api-keys");
   }
 
-  async createApiKey(data: unknown) {
-    return this.post("/api/v1/api-keys", data);
+  async createApiKey(data: unknown): Promise<ApiKey & { raw_key?: string }> {
+    return this.post<ApiKey & { raw_key?: string }>("/api/v1/api-keys", data);
   }
 
-  async deleteApiKey(id: string) {
-    return this.delete(`/api/v1/api-keys/${id}`);
+  async deleteApiKey(id: string): Promise<void> {
+    return this.delete<void>(`/api/v1/api-keys/${id}`);
   }
 
   // Audit Log methods
-  async getAuditLog(params?: URLSearchParams): Promise<ApiResponse<any[]>> {
+  async getAuditLog(
+    params?: URLSearchParams,
+  ): Promise<ApiResponse<AuditLogEntry[]>> {
     const queryString = params ? `?${params.toString()}` : "";
-    return this.get(`/api/v1/audit-log${queryString}`);
+    return this.get<ApiResponse<AuditLogEntry[]>>(
+      `/api/v1/audit-log${queryString}`,
+    );
   }
 }
 

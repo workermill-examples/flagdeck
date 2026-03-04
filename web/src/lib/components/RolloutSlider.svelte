@@ -59,7 +59,7 @@
 
 <div class="space-y-2">
 	<div class="flex items-center justify-between">
-		<label class="text-sm font-medium text-gray-700">
+		<label for="rollout-slider-{flag.key}-{environment}" class="text-sm font-medium text-gray-700">
 			Rollout Percentage
 		</label>
 		<span class="text-sm text-gray-500">
@@ -68,6 +68,7 @@
 	</div>
 	<div class="relative">
 		<input
+			id="rollout-slider-{flag.key}-{environment}"
 			type="range"
 			min="0"
 			max="100"
