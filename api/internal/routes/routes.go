@@ -57,8 +57,8 @@ func SetupRoutes(app *fiber.App, mongodb *database.MongoDB, redisdb *database.Re
 	apiKeyAuth := middleware.AuthenticateAPIKey(middleware.APIKeyConfig{
 		APIKeyCollection: mongodb.APIKeysCollection(),
 	})
-	authRateLimit := middleware.AuthRateLimit(redisdb.Client)     // 5 req/min for auth
-	apiRateLimit := middleware.APIRateLimit(redisdb.Client)       // 100 req/15min for API
+	authRateLimit := middleware.AuthRateLimit(redisdb.Client)     // 300 req/min for auth
+	apiRateLimit := middleware.APIRateLimit(redisdb.Client)       // 1000 req/min for API
 	evalRateLimit := middleware.EvaluateRateLimit(redisdb.Client) // 1000 req/min for evaluation
 
 	// Public routes

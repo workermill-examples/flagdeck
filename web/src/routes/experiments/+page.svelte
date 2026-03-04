@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { api } from "$lib/api.js";
-  import type { Experiment, ExperimentVariant } from "$lib/types.js";
+  import type { Experiment, ExperimentVariant, Environment } from "$lib/types.js";
   import ExperimentChart from "$lib/components/ExperimentChart.svelte";
 
   let experiments = $state<Experiment[]>([]);
+  let environments = $state<Environment[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
   let expandedExperiments = $state<Set<string>>(new Set());
@@ -17,6 +18,7 @@
     name: "",
     description: "",
     flag_key: "",
+    environment: "production",
     status: "draft" as "draft" | "running" | "paused" | "completed",
     variants: [
       { key: "control", name: "Control", weight: 50, value: false },
@@ -45,7 +47,15 @@
     try {
       loading = true;
       const response = await api.getExperiments();
-      experiments = response.data;
+      // Transform API variants (traffic_split) to frontend format (weight/key)
+      experiments = response.data.map(exp => ({
+        ...exp,
+        variants: exp.variants.map(v => ({
+          ...v,
+          key: v.key || v.name || "",
+          weight: v.weight ?? (v as any).traffic_split ?? 50,
+        })),
+      }));
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load experiments";
     } finally {
@@ -68,6 +78,7 @@
       name: "",
       description: "",
       flag_key: "",
+      environment: environments.length > 0 ? environments[0].key : "production",
       status: "draft",
       variants: [
         { key: "control", name: "Control", weight: 50, value: false },
@@ -89,11 +100,12 @@
       name: experiment.name,
       description: experiment.description,
       flag_key: experiment.flag_key,
+      environment: (experiment as any).environment || "production",
       status: experiment.status,
       variants: experiment.variants.map(v => ({
-        key: v.key,
-        name: v.name,
-        weight: v.weight,
+        key: v.key || v.name || "",
+        name: v.name || "",
+        weight: v.weight ?? (v as any).traffic_split ?? 50,
         value: v.value,
       })),
     };
@@ -178,11 +190,21 @@
       return;
     }
 
+    // Transform variants to API format (weight → traffic_split, remove key)
+    const apiData = {
+      ...formData,
+      variants: formData.variants.map(v => ({
+        name: v.name || v.key,
+        value: v.value,
+        traffic_split: v.weight,
+      })),
+    };
+
     try {
       if (editingExperiment) {
-        await api.updateExperiment(editingExperiment.key, formData);
+        await api.updateExperiment(editingExperiment.key, apiData);
       } else {
-        await api.createExperiment(formData);
+        await api.createExperiment(apiData);
       }
       await loadExperiments();
       resetForm();
@@ -208,8 +230,18 @@
     return new Date(dateString).toLocaleDateString();
   }
 
+  async function loadEnvironments() {
+    try {
+      const response = await api.getEnvironments();
+      environments = response.data;
+    } catch {
+      // Environments loading failure is non-fatal
+    }
+  }
+
   onMount(() => {
     loadExperiments();
+    loadEnvironments();
   });
 </script>
 
@@ -304,7 +336,7 @@
             ></textarea>
           </div>
 
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label for="flag_key" class="block text-sm font-medium text-gray-700">Flag Key</label>
               <input
@@ -315,6 +347,23 @@
                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="new-checkout-flow"
               />
+            </div>
+            <div>
+              <label for="environment" class="block text-sm font-medium text-gray-700">Environment</label>
+              <select
+                id="environment"
+                bind:value={formData.environment}
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                {#each environments as env}
+                  <option value={env.key}>{env.name}</option>
+                {/each}
+                {#if environments.length === 0}
+                  <option value="production">Production</option>
+                  <option value="staging">Staging</option>
+                  <option value="development">Development</option>
+                {/if}
+              </select>
             </div>
             <div>
               <label for="status" class="block text-sm font-medium text-gray-700">Status</label>

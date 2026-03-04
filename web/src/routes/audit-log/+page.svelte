@@ -39,6 +39,14 @@
     { value: "toggled", label: "Toggled" },
   ];
 
+  // Mapping from filter values to simple action format used by audit service
+  const actionFilterToSimple: Record<string, string> = {
+    created: "create",
+    updated: "update",
+    deleted: "delete",
+    toggled: "toggle",
+  };
+
   async function loadEntries() {
     try {
       loading = true;
@@ -52,12 +60,9 @@
         params.set("resource", resourceFilter);
       }
 
-      if (actionFilter) {
-        // Convert action filter to full action format (e.g., "created" -> any action ending with ".created")
-        // The backend expects specific action names like "flag.created", so we'll filter client-side if needed
-        // For now, we'll send the action filter as-is and let the backend handle it
-        params.set("action", actionFilter);
-      }
+      // Action filtering is done client-side because the DB stores actions in two formats:
+      // compound ("flag.created") from seeded data and simple ("create") from the audit service.
+      // Server-side exact match can't handle both, so we filter client-side instead.
 
       const response = await api.getAuditLog(params);
       entries = response.data || [];
@@ -102,16 +107,17 @@
     loadEntries();
   }
 
-  // Filter entries client-side for more flexible action filtering since backend might not support partial matching
+  // Filter entries client-side for flexible action filtering
+  // DB has two formats: compound ("flag.created") from seed data and simple ("create") from audit service
   const filteredEntries = $derived.by(() => {
     if (!actionFilter) return entries;
 
+    const simpleForm = actionFilterToSimple[actionFilter] || actionFilter;
     return entries.filter((entry) => {
-      if (actionFilter === "created") return entry.action.endsWith(".created");
-      if (actionFilter === "updated") return entry.action.endsWith(".updated");
-      if (actionFilter === "deleted") return entry.action.endsWith(".deleted");
-      if (actionFilter === "toggled") return entry.action.endsWith(".toggled");
-      return entry.action.includes(actionFilter);
+      return (
+        entry.action.endsWith("." + actionFilter) ||
+        entry.action === simpleForm
+      );
     });
   });
 

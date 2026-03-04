@@ -49,11 +49,11 @@ test.describe("Flags Page", () => {
     // Verify some realistic flag names from the seeded data
     await expect(
       page
-        .locator("text=dark-mode")
+        .locator("text=beta_features")
         .or(
           page
-            .locator("text=checkout-flow")
-            .or(page.locator("text=search-algorithm")),
+            .locator("text=welcome_message")
+            .or(page.locator("text=new_dashboard")),
         )
         .first(),
     ).toBeVisible();
@@ -68,7 +68,7 @@ test.describe("Flags Page", () => {
     expect(initialCount).toBeGreaterThan(0);
 
     // Search for a specific term
-    await page.fill("#search", "dark");
+    await page.fill("#search", "beta");
 
     // Wait for filtering to apply
     await page.waitForTimeout(500);
@@ -83,7 +83,7 @@ test.describe("Flags Page", () => {
       .first()
       .locator(".text-sm.font-medium.text-gray-900, .text-sm.text-gray-500")
       .allTextContents();
-    expect(firstFlag.some((text) => text.toLowerCase().includes("dark"))).toBe(
+    expect(firstFlag.some((text) => text.toLowerCase().includes("beta"))).toBe(
       true,
     );
 
@@ -160,32 +160,33 @@ test.describe("Flags Page", () => {
 
     // Find the first flag row
     const firstFlagRow = page.locator("tbody tr").first();
-    const flagKey = await firstFlagRow
-      .locator(".text-sm.text-gray-500")
-      .first()
-      .textContent();
 
-    // Find a toggle switch in the first row
-    const toggleSwitch = firstFlagRow.locator('input[type="checkbox"]').first();
-    const initialState = await toggleSwitch.isChecked();
+    // Find a toggle button in the first row (FlagToggle is a button element)
+    const toggleButton = firstFlagRow
+      .locator('button[class*="rounded-full"][class*="h-6"]')
+      .first();
+    const initialClasses = await toggleButton.getAttribute("class");
+    const wasEnabled = initialClasses?.includes("bg-blue-600");
 
     // Click the toggle
-    await toggleSwitch.click();
+    await toggleButton.click();
 
     // Wait for the API call to complete
     await page.waitForTimeout(1000);
 
     // Verify the toggle state changed
-    const newState = await toggleSwitch.isChecked();
-    expect(newState).not.toBe(initialState);
+    const newClasses = await toggleButton.getAttribute("class");
+    const isNowEnabled = newClasses?.includes("bg-blue-600");
+    expect(isNowEnabled).not.toBe(wasEnabled);
 
     // Toggle it back
-    await toggleSwitch.click();
+    await toggleButton.click();
     await page.waitForTimeout(1000);
 
     // Verify it's back to original state
-    const finalState = await toggleSwitch.isChecked();
-    expect(finalState).toBe(initialState);
+    const finalClasses = await toggleButton.getAttribute("class");
+    const isFinalEnabled = finalClasses?.includes("bg-blue-600");
+    expect(isFinalEnabled).toBe(wasEnabled);
   });
 
   test("can edit flag targeting rules", async ({ page }) => {
@@ -196,43 +197,34 @@ test.describe("Flags Page", () => {
     await page.click('tbody tr:first-child button:has-text("Edit")');
 
     // Wait for flag detail page to load
-    await page.waitForURL(/\/flags\/.*/, { timeout: 10000 });
+    await page.waitForURL(/\/flags\/.+/, { timeout: 10000 });
+    await page.waitForLoadState("networkidle");
 
     // Verify we're on flag detail page
     await expect(page.locator("main h1")).toBeVisible();
 
-    // Look for targeting rule builder or environment configuration
-    // The targeting rules might be in a tab or section
-    const targetingSection = page
-      .locator("text=Targeting")
-      .or(page.locator("text=Rules"))
-      .or(page.locator("text=Environment"));
+    // The detail page has tabs: "Settings" and "Environments"
+    // Click the Environments tab to see targeting/rollout controls
+    const environmentsTab = page.locator('button:has-text("Environments")');
+    if (await environmentsTab.isVisible()) {
+      await environmentsTab.click();
+      await page.waitForTimeout(500);
 
-    if (await targetingSection.isVisible()) {
-      await targetingSection.click();
-
-      // Look for add rule button or rule builder
-      const addRuleButton = page
-        .locator('button:has-text("Add Rule")')
-        .or(page.locator('button:has-text("Add Condition")'));
-      if (await addRuleButton.isVisible()) {
-        await addRuleButton.click();
-
-        // Verify rule builder interface appeared
-        await expect(
-          page
-            .locator(
-              'input[placeholder*="property"], select, input[placeholder*="value"]',
-            )
-            .first(),
-        ).toBeVisible();
-      }
+      // Verify environment configuration is shown
+      // Look for environment toggle switches or rollout sliders
+      const toggles = page.locator('button[class*="rounded-full"][class*="h-6"]');
+      const toggleCount = await toggles.count();
+      expect(toggleCount).toBeGreaterThan(0);
     }
 
-    // Test rollout slider if present
-    const rolloutSlider = page.locator('input[type="range"]');
-    if (await rolloutSlider.isVisible()) {
-      await rolloutSlider.fill("75");
+    // Verify basic settings are accessible
+    const settingsTab = page.locator('button:has-text("Settings")');
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click();
+      await page.waitForTimeout(500);
+
+      // Verify name field is present
+      await expect(page.locator("#name")).toBeVisible();
     }
   });
 

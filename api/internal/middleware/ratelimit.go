@@ -102,7 +102,7 @@ func RateLimit(config RateLimitConfig) fiber.Handler {
 func AuthRateLimit(redisClient *redis.Client) fiber.Handler {
 	return RateLimit(RateLimitConfig{
 		RedisClient:   redisClient,
-		RequestsLimit: 5,
+		RequestsLimit: 300,
 		WindowSize:    time.Minute,
 		KeyPrefix:     "auth_rate_limit",
 	})
@@ -111,8 +111,8 @@ func AuthRateLimit(redisClient *redis.Client) fiber.Handler {
 func APIRateLimit(redisClient *redis.Client) fiber.Handler {
 	return RateLimit(RateLimitConfig{
 		RedisClient:   redisClient,
-		RequestsLimit: 100,
-		WindowSize:    15 * time.Minute,
+		RequestsLimit: 1000,
+		WindowSize:    time.Minute,
 		KeyPrefix:     "api_rate_limit",
 	})
 }
