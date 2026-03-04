@@ -48,6 +48,14 @@ func SetupRoutes(app *fiber.App, mongodb *database.MongoDB, redisdb *database.Re
 		auditService,
 	)
 	auditHandler := handlers.NewAuditHandler(mongodb.AuditLogCollection())
+	statsHandler := handlers.NewStatsHandler(
+		mongodb.FlagsCollection(),
+		mongodb.EnvironmentsCollection(),
+		mongodb.SegmentsCollection(),
+		mongodb.ExperimentsCollection(),
+		mongodb.APIKeysCollection(),
+		mongodb.AuditLogCollection(),
+	)
 
 	// Initialize middleware
 	jwtAuth := middleware.AuthenticateJWT(middleware.AuthConfig{
@@ -113,6 +121,9 @@ func SetupRoutes(app *fiber.App, mongodb *database.MongoDB, redisdb *database.Re
 
 	// Audit log
 	apiGroup.Get("/audit-log", auditHandler.GetAuditLog)
+
+	// Stats endpoint
+	apiGroup.Get("/stats", statsHandler.GetStats)
 
 	// API key authenticated routes (for flag evaluation and experiment tracking)
 	// These routes use API key authentication instead of JWT
