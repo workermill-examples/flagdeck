@@ -21,10 +21,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o main ./cm
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o seed ./cmd/seed
 
 # Production stage - minimal image
-FROM scratch
+FROM alpine:latest
 
-# Copy CA certificates for HTTPS
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Install CA certificates
+RUN apk --no-cache add ca-certificates
 
 # Set working directory
 WORKDIR /app
@@ -36,5 +36,5 @@ COPY --from=builder /app/seed /app/seed
 # Expose port
 EXPOSE 8080
 
-# Run the main server
-ENTRYPOINT ["/app/main"]
+# Run seed then main server
+CMD ["/bin/sh", "-c", "/app/seed && /app/main"]

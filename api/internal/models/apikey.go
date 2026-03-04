@@ -9,6 +9,7 @@ import (
 type ApiKey struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
 	Name        string             `bson:"name" json:"name"`
+	KeyPrefix   string             `bson:"key_prefix" json:"key_prefix"`
 	KeyHash     string             `bson:"key_hash" json:"-"`
 	Environment string             `bson:"environment" json:"environment"`
 	LastUsedAt  *time.Time         `bson:"last_used_at" json:"last_used_at"`
