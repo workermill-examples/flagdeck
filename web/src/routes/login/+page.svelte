@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { auth } from "$lib/auth.js";
+  import { auth } from "$lib/auth.svelte.js";
 
   let email = $state("demo@workermill.com");
   let password = $state("demo1234");

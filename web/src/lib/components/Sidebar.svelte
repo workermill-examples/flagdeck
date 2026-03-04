@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { auth } from "$lib/auth.js";
+  import { auth } from "$lib/auth.svelte.js";
 
   interface NavItem {
     href: string;

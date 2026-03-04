@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
-  import { auth } from "$lib/auth.js";
+  import { auth } from "$lib/auth.svelte.js";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import "../../app.css";
 

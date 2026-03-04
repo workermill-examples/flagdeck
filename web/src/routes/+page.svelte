@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { auth } from "$lib/auth.js";
+  import { auth } from "$lib/auth.svelte.js";
 
   // If user is already authenticated, redirect to dashboard
   $effect(() => {
