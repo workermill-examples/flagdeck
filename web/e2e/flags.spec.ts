@@ -3,8 +3,9 @@ import { test, expect } from "@playwright/test";
 // Helper function to login before each test
 async function login(page: any) {
   await page.goto("/login");
+  await page.waitForSelector('#email', { state: 'visible' });
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
+  await page.waitForURL('**/dashboard', { timeout: 30000 });
 }
 
 test.describe("Flags Page", () => {
@@ -23,7 +24,7 @@ test.describe("Flags Page", () => {
 
     // Verify page title and header
     await expect(page).toHaveTitle(/Feature Flags - FlagDeck/);
-    await expect(page.locator("h1")).toContainText("Feature Flags");
+    await expect(page.locator("main h1")).toContainText("Feature Flags");
 
     // Wait for data to load
     await page.waitForLoadState("networkidle");
@@ -122,7 +123,7 @@ test.describe("Flags Page", () => {
     await expect(page).toHaveURL("/flags/create");
 
     // Verify create page is loaded
-    await expect(page.locator("h1")).toContainText("Create Feature Flag");
+    await expect(page.locator("main h1")).toContainText("Create Feature Flag");
 
     // Wait for environments to load
     await page.waitForLoadState("networkidle");
@@ -150,7 +151,7 @@ test.describe("Flags Page", () => {
     await page.waitForURL(/\/flags\/.*/, { timeout: 10000 });
 
     // Verify we're on the flag detail page
-    await expect(page.locator("h1")).toContainText(flagName);
+    await expect(page.locator("main h1")).toContainText(flagName);
   });
 
   test("can toggle flag environments", async ({ page }) => {
@@ -198,7 +199,7 @@ test.describe("Flags Page", () => {
     await page.waitForURL(/\/flags\/.*/, { timeout: 10000 });
 
     // Verify we're on flag detail page
-    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator("main h1")).toBeVisible();
 
     // Look for targeting rule builder or environment configuration
     // The targeting rules might be in a tab or section

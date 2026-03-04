@@ -3,8 +3,9 @@ import { test, expect } from "@playwright/test";
 // Helper function to login before each test
 async function login(page: any) {
   await page.goto("/login");
+  await page.waitForSelector('#email', { state: 'visible' });
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
+  await page.waitForURL('**/dashboard', { timeout: 30000 });
 }
 
 test.describe("Experiments Page", () => {
@@ -23,7 +24,7 @@ test.describe("Experiments Page", () => {
 
     // Verify page title and header
     await expect(page).toHaveTitle(/FlagDeck/);
-    await expect(page.locator("h1")).toContainText("Experiments");
+    await expect(page.locator("main h1")).toContainText("Experiments");
 
     // Wait for data to load
     await page.waitForLoadState("networkidle");

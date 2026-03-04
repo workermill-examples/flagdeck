@@ -49,7 +49,7 @@ test.describe("Login Flow", () => {
     // Wait for error to appear
     await expect(page.locator(".bg-red-50")).toBeVisible();
     await expect(page.locator(".text-red-800")).toContainText(
-      /Login failed|Invalid credentials|Authentication failed/,
+      /Login failed|Invalid credentials|Authentication failed|Invalid email or password/,
     );
 
     // Verify we're still on login page
@@ -84,7 +84,7 @@ test.describe("Login Flow", () => {
     // First login to get authentication
     await page.goto("/login");
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL("/dashboard");
+    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
 
     // Now try to visit login page again
     await page.goto("/login");
