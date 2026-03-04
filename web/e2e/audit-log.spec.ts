@@ -35,10 +35,14 @@ test.describe("Audit Log Page", () => {
     expect(entryCount).toBeGreaterThan(0); // Spec mentions 50+ audit entries
 
     // Verify realistic user activity
-    await expect(page.locator("text=demo@workermill.com")).toBeVisible();
+    await expect(
+      page.locator("main text=demo@workermill.com").first(),
+    ).toBeVisible();
 
-    // Verify action types are displayed
-    const actionElements = page.locator(".font-medium.text-gray-900");
+    // Verify action types are displayed (scoped to audit-timeline to avoid sidebar)
+    const actionElements = page.locator(
+      ".audit-timeline .font-medium.text-gray-900",
+    );
     const actionCount = await actionElements.count();
     expect(actionCount).toBeGreaterThan(0);
 
@@ -98,7 +102,9 @@ test.describe("Audit Log Page", () => {
 
     // Verify the visible entries are flag-related
     // All visible actions should contain "Flag" in the action text
-    const actionElements = page.locator(".font-medium.text-gray-900");
+    const actionElements = page.locator(
+      ".audit-timeline .font-medium.text-gray-900",
+    );
     const actionCount = await actionElements.count();
 
     if (actionCount > 0) {
@@ -130,7 +136,9 @@ test.describe("Audit Log Page", () => {
     await page.waitForTimeout(1000);
 
     // Verify filtered results contain only "created" actions
-    const actionElements = page.locator(".font-medium.text-gray-900");
+    const actionElements = page.locator(
+      ".audit-timeline .font-medium.text-gray-900",
+    );
     const actionCount = await actionElements.count();
 
     if (actionCount > 0) {
@@ -158,14 +166,15 @@ test.describe("Audit Log Page", () => {
       await expect(page.locator('button:has-text("Next")')).toBeVisible();
 
       // Verify page information
-      await expect(page.locator("text=Page")).toBeVisible();
-      await expect(page.locator("text=of")).toBeVisible();
+      await expect(
+        page.locator(".border-t.border-gray-200 >> text=/Page.*of/"),
+      ).toBeVisible();
 
       // Test next page if available
       const nextButton = page.locator('button:has-text("Next")');
       if (await nextButton.isEnabled()) {
         const firstPageFirstEntry = await page
-          .locator("ul.-mb-8 li")
+          .locator(".audit-timeline ul.-mb-8 li")
           .first()
           .locator(".font-medium.text-gray-900")
           .textContent();
@@ -174,11 +183,13 @@ test.describe("Audit Log Page", () => {
         await page.waitForTimeout(1000);
 
         // Verify we're on page 2
-        await expect(page.locator("text=Page 2")).toBeVisible();
+        await expect(
+          page.locator(".border-t.border-gray-200 >> text=Page 2"),
+        ).toBeVisible();
 
         // Verify different entries are shown
         const secondPageFirstEntry = await page
-          .locator("ul.-mb-8 li")
+          .locator(".audit-timeline ul.-mb-8 li")
           .first()
           .locator(".font-medium.text-gray-900")
           .textContent();
@@ -188,7 +199,9 @@ test.describe("Audit Log Page", () => {
         await page.click('button:has-text("Previous")');
         await page.waitForTimeout(1000);
 
-        await expect(page.locator("text=Page 1")).toBeVisible();
+        await expect(
+          page.locator(".border-t.border-gray-200 >> text=Page 1"),
+        ).toBeVisible();
       }
     }
   });
@@ -202,7 +215,10 @@ test.describe("Audit Log Page", () => {
     await page.waitForTimeout(1000);
 
     // Verify showing information is updated
-    const showingText = await page.locator("text=Showing").textContent();
+    const showingText = await page
+      .locator("text=Showing")
+      .first()
+      .textContent();
     expect(showingText).toMatch(/Showing \d+-\d+ of \d+ entries/);
 
     // Change to 50 entries per page
@@ -210,7 +226,10 @@ test.describe("Audit Log Page", () => {
     await page.waitForTimeout(1000);
 
     // Verify the page updated
-    const newShowingText = await page.locator("text=Showing").textContent();
+    const newShowingText = await page
+      .locator("text=Showing")
+      .first()
+      .textContent();
     expect(newShowingText).toBeTruthy();
   });
 
@@ -231,8 +250,8 @@ test.describe("Audit Log Page", () => {
       await expect(page.locator('h4:has-text("Changes")')).toBeVisible();
 
       // Verify before/after sections
-      await expect(page.locator("text=Before:")).toBeVisible();
-      await expect(page.locator("text=After:")).toBeVisible();
+      await expect(page.locator("text=Before:").first()).toBeVisible();
+      await expect(page.locator("text=After:").first()).toBeVisible();
 
       // Verify we can collapse it
       await page.click('button:has-text("Hide changes")');
@@ -359,9 +378,12 @@ test.describe("Audit Log Page", () => {
     await expect(page.locator("text=Resource: Flags")).toBeVisible();
     await expect(page.locator("text=Action: Created")).toBeVisible();
 
-    // Remove resource filter pill
-    const resourcePill = page.locator("text=Resource: Flags").locator("..");
-    await resourcePill.locator("button").click();
+    // Remove resource filter pill (use specific pill class to avoid matching sibling pills)
+    await page
+      .locator(".bg-blue-100")
+      .filter({ hasText: "Resource:" })
+      .locator("button")
+      .click();
     await page.waitForTimeout(1000);
 
     // Verify only action filter remains
@@ -369,8 +391,11 @@ test.describe("Audit Log Page", () => {
     await expect(page.locator("text=Action: Created")).toBeVisible();
 
     // Remove action filter pill
-    const actionPill = page.locator("text=Action: Created").locator("..");
-    await actionPill.locator("button").click();
+    await page
+      .locator(".bg-green-100")
+      .filter({ hasText: "Action:" })
+      .locator("button")
+      .click();
     await page.waitForTimeout(1000);
 
     // Verify both filters are cleared
@@ -390,7 +415,9 @@ test.describe("Audit Log Page", () => {
 
     // Verify we have different types of actions
     const uniqueActions = new Set();
-    const actionElements = page.locator(".font-medium.text-gray-900");
+    const actionElements = page.locator(
+      ".audit-timeline .font-medium.text-gray-900",
+    );
     const actionCount = Math.min(10, await actionElements.count());
 
     for (let i = 0; i < actionCount; i++) {

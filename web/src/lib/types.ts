@@ -131,7 +131,7 @@ export interface AuditLogEntry {
   user_email: string;
   changes: unknown;
   metadata: unknown;
-  created_at: string;
+  timestamp: string;
 }
 
 export interface ApiResponse<T> {

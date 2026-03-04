@@ -25,7 +25,8 @@
     ).length,
     totalEnvironments: environments.length,
     totalExperiments: experiments.length,
-    runningExperiments: experiments.filter((e) => e.status === "running").length,
+    runningExperiments: experiments.filter((e) => e.status === "running")
+      .length,
   });
 
   async function loadDashboardData() {
@@ -65,13 +66,10 @@
   function formatTimeAgo(timestamp: string): string {
     const date = new Date(timestamp);
     const now = new Date();
-    const diffInSeconds = Math.floor(
-      (now.getTime() - date.getTime()) / 1000,
-    );
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-    if (diffInSeconds < 3600)
-      return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400)
       return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
@@ -221,7 +219,7 @@
                       <span class="font-mono">{entry.resource_id}</span>
                     </p>
                     <p class="text-xs text-gray-400 mt-1">
-                      {formatTimeAgo(entry.created_at)}
+                      {formatTimeAgo(entry.timestamp)}
                     </p>
                   </div>
                 </div>
@@ -250,9 +248,7 @@
           {#if isLoading}
             <div class="space-y-3">
               {#each Array(5) as _}
-                <div
-                  class="animate-pulse flex justify-between items-center"
-                >
+                <div class="animate-pulse flex justify-between items-center">
                   <div class="h-4 bg-gray-200 rounded w-1/2"></div>
                   <div class="h-6 bg-gray-200 rounded w-16"></div>
                 </div>
@@ -265,9 +261,7 @@
               {#each flags.slice(0, 8) as flag (flag.key)}
                 <div class="flex items-center justify-between">
                   <div class="flex-1 min-w-0">
-                    <p
-                      class="text-sm font-medium text-gray-900 truncate"
-                    >
+                    <p class="text-sm font-medium text-gray-900 truncate">
                       {flag.name}
                     </p>
                     <p class="text-xs text-gray-500 font-mono">
@@ -278,8 +272,13 @@
                     <div class="flex items-center space-x-1">
                       {#each Object.entries(flag.environments) as [envKey, envConfig]}
                         <div
-                          class="w-3 h-3 rounded-full {envConfig.enabled && flag.is_active ? 'bg-green-400' : 'bg-gray-300'}"
-                          title="{envKey}: {envConfig.enabled && flag.is_active ? 'enabled' : 'disabled'}"
+                          class="w-3 h-3 rounded-full {envConfig.enabled &&
+                          flag.is_active
+                            ? 'bg-green-400'
+                            : 'bg-gray-300'}"
+                          title="{envKey}: {envConfig.enabled && flag.is_active
+                            ? 'enabled'
+                            : 'disabled'}"
                         ></div>
                       {/each}
                     </div>

@@ -145,7 +145,7 @@ test.describe("Experiments Page", () => {
     expect(parseInt(controlWeight) + parseInt(variantWeight)).toBe(100);
 
     // Submit the form
-    await page.click('button:has-text("Create")');
+    await page.click('button[type="submit"]');
 
     // Wait for form to disappear
     await expect(
@@ -161,7 +161,7 @@ test.describe("Experiments Page", () => {
     await page.waitForLoadState("networkidle");
 
     // Click edit button on first experiment
-    await page.click('button:has-text("Edit")');
+    await page.locator('button:has-text("Edit")').first().click();
 
     // Verify edit form appears
     await expect(page.locator('h3:has-text("Edit Experiment")')).toBeVisible();
@@ -235,8 +235,8 @@ test.describe("Experiments Page", () => {
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     expect(totalWeight).toBe(100);
 
-    // Remove a variant
-    await page.click('button:has-text("Remove")');
+    // Remove a variant (use .first() since multiple Remove buttons exist)
+    await page.locator('button:has-text("Remove")').first().click();
 
     // Verify we're back to 2 variants
     const finalVariantCount = await page
@@ -345,7 +345,7 @@ test.describe("Experiments Page", () => {
     await page.waitForLoadState("networkidle");
 
     // Click delete button on first experiment
-    await page.click('button:has-text("Delete")');
+    await page.locator('button:has-text("Delete")').first().click();
 
     // Verify confirmation modal appears
     await expect(
@@ -427,7 +427,7 @@ test.describe("Experiments Page", () => {
     await expect(page.locator("text=Must equal 100%")).toBeVisible();
 
     // Try to submit (should fail)
-    await page.click('button:has-text("Create")');
+    await page.click('button[type="submit"]');
 
     // Should show validation error
     await expect(page.locator("text=weights must sum to 100%")).toBeVisible();

@@ -92,7 +92,7 @@ test.describe("Dashboard Page", () => {
 
     // Verify audit entries show user emails and actions
     await expect(
-      page.locator("main").locator("text=demo@workermill.com"),
+      page.locator("main").locator("text=demo@workermill.com").first(),
     ).toBeVisible();
 
     // Verify "View all activity" link
