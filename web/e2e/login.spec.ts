@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Login Flow", () => {
   test.beforeEach(async ({ page }) => {
-    // Clear any existing authentication
+    // Navigate first so localStorage is accessible (about:blank denies access)
+    await page.goto("/login");
     await page.context().clearCookies();
     await page.evaluate(() => localStorage.clear());
   });
@@ -24,7 +25,7 @@ test.describe("Login Flow", () => {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/dashboard");
 
     // Verify we're on the dashboard
     await expect(page.locator("h1")).toContainText("Dashboard");
@@ -83,13 +84,13 @@ test.describe("Login Flow", () => {
     // First login to get authentication
     await page.goto("/login");
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/dashboard");
 
     // Now try to visit login page again
     await page.goto("/login");
 
     // Should be redirected to dashboard
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL("/dashboard");
   });
 
   test("demo credentials notice is visible", async ({ page }) => {

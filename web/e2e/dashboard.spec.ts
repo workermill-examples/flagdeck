@@ -4,12 +4,13 @@ import { test, expect } from "@playwright/test";
 async function login(page: any) {
   await page.goto("/login");
   await page.click('button[type="submit"]');
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/dashboard");
 }
 
 test.describe("Dashboard Page", () => {
   test.beforeEach(async ({ page }) => {
-    // Clear any existing authentication
+    // Navigate first so localStorage is accessible (about:blank denies access)
+    await page.goto("/login");
     await page.context().clearCookies();
     await page.evaluate(() => localStorage.clear());
 
@@ -182,7 +183,7 @@ test.describe("Dashboard Page", () => {
     await expect(page).toHaveURL("/audit-log");
 
     // Go back to dashboard
-    await page.goto("/");
+    await page.goto("/dashboard");
 
     // Test "View all flags" link
     await page.click('a[href="/flags"]');
