@@ -27,10 +27,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'web/package-lock.json'
 
-      - name: Install Playwright dependencies
-        run: |
-          npm install -g @playwright/test
-          npx playwright install --with-deps
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
       - name: Start docker-compose stack
         run: |
