@@ -21,9 +21,12 @@ type EvaluationService struct {
 }
 
 type EvaluationResult struct {
+	Key          string      `json:"key"`
 	Value        interface{} `json:"value"`
+	Type         string      `json:"type"`
 	Reason       string      `json:"reason"`
 	RuleID       *string     `json:"rule_id,omitempty"`
+	Environment  string      `json:"environment"`
 	EvaluationMs int64       `json:"evaluation_ms"`
 }
 
@@ -63,8 +66,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return &EvaluationResult{
+				Key:          req.FlagKey,
 				Value:        nil,
+				Type:         "",
 				Reason:       "flag_not_found",
+				Environment:  req.Environment,
 				EvaluationMs: time.Since(startTime).Milliseconds(),
 			}, nil
 		}
@@ -74,8 +80,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 	// Check if flag is globally active
 	if !flag.IsActive {
 		return &EvaluationResult{
+			Key:          req.FlagKey,
 			Value:        nil,
+			Type:         flag.Type,
 			Reason:       "flag_disabled",
+			Environment:  req.Environment,
 			EvaluationMs: time.Since(startTime).Milliseconds(),
 		}, nil
 	}
@@ -89,8 +98,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
 				return &EvaluationResult{
+					Key:          req.FlagKey,
 					Value:        nil,
+					Type:         flag.Type,
 					Reason:       "environment_not_found",
+					Environment:  req.Environment,
 					EvaluationMs: time.Since(startTime).Milliseconds(),
 				}, nil
 			}
@@ -99,8 +111,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 
 		// Environment exists but flag not configured for it
 		return &EvaluationResult{
+			Key:          req.FlagKey,
 			Value:        nil,
+			Type:         flag.Type,
 			Reason:       "flag_not_configured_for_environment",
+			Environment:  req.Environment,
 			EvaluationMs: time.Since(startTime).Milliseconds(),
 		}, nil
 	}
@@ -108,8 +123,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 	// Check if flag is enabled in this environment
 	if !envConfig.Enabled {
 		return &EvaluationResult{
+			Key:          req.FlagKey,
 			Value:        envConfig.DefaultValue,
+			Type:         flag.Type,
 			Reason:       "environment_disabled",
+			Environment:  req.Environment,
 			EvaluationMs: time.Since(startTime).Milliseconds(),
 		}, nil
 	}
@@ -132,9 +150,12 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 			if matches {
 				ruleID := rule.ID.Hex()
 				return &EvaluationResult{
+					Key:          req.FlagKey,
 					Value:        rule.Value,
+					Type:         flag.Type,
 					Reason:       "targeting_rule_match",
 					RuleID:       &ruleID,
+					Environment:  req.Environment,
 					EvaluationMs: time.Since(startTime).Milliseconds(),
 				}, nil
 			}
@@ -146,8 +167,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 		userInRollout := s.isUserInRollout(req.FlagKey, req.UserID, envConfig.RolloutPercent)
 		if !userInRollout {
 			return &EvaluationResult{
+				Key:          req.FlagKey,
 				Value:        envConfig.DefaultValue,
+				Type:         flag.Type,
 				Reason:       "rollout_excluded",
+				Environment:  req.Environment,
 				EvaluationMs: time.Since(startTime).Milliseconds(),
 			}, nil
 		}
@@ -155,8 +179,11 @@ func (s *EvaluationService) EvaluateFlag(req EvaluationRequest) (*EvaluationResu
 
 	// 5. Return the flag value
 	return &EvaluationResult{
+		Key:          req.FlagKey,
 		Value:        envConfig.DefaultValue,
+		Type:         flag.Type,
 		Reason:       "default_value",
+		Environment:  req.Environment,
 		EvaluationMs: time.Since(startTime).Milliseconds(),
 	}, nil
 }
@@ -177,8 +204,11 @@ func (s *EvaluationService) EvaluateFlags(req BulkEvaluationRequest) (*BulkEvalu
 		if err != nil {
 			// On error, return error reason
 			results[flagKey] = EvaluationResult{
-				Value:  nil,
-				Reason: "evaluation_error",
+				Key:         flagKey,
+				Value:       nil,
+				Type:        "",
+				Reason:      "evaluation_error",
+				Environment: req.Environment,
 			}
 		} else {
 			results[flagKey] = *result
