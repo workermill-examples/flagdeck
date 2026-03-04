@@ -3,9 +3,9 @@ import { test, expect } from "@playwright/test";
 // Helper function to login before each test
 async function login(page: any) {
   await page.goto("/login");
-  await page.waitForSelector('#email', { state: 'visible' });
+  await page.waitForSelector("#email", { state: "visible" });
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 30000 });
+  await page.waitForURL("**/dashboard", { timeout: 30000 });
 }
 
 test.describe("Dashboard Page", () => {
@@ -37,11 +37,21 @@ test.describe("Dashboard Page", () => {
     });
 
     // Verify all stat cards are present
-    await expect(page.locator("main").locator("text=Total Flags")).toBeVisible();
-    await expect(page.locator("main").locator("text=Active Flags")).toBeVisible();
-    await expect(page.locator("main").locator("text=Environments")).toBeVisible();
-    await expect(page.locator("main").locator("text=Total Experiments")).toBeVisible();
-    await expect(page.locator("main").locator("text=Running Experiments")).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Total Flags"),
+    ).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Active Flags"),
+    ).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Environments"),
+    ).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Total Experiments"),
+    ).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Running Experiments"),
+    ).toBeVisible();
 
     // Verify stat cards show non-zero values from seeded data
     // Total Flags should be > 0 (spec mentions 10+ flags)
@@ -96,7 +106,9 @@ test.describe("Dashboard Page", () => {
     await expect(auditEntries.first()).toBeVisible();
 
     // Verify audit entries show user emails and actions
-    await expect(page.locator("main").locator("text=demo@workermill.com")).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=demo@workermill.com"),
+    ).toBeVisible();
 
     // Verify "View all activity" link
     await expect(page.locator('a:has-text("View all activity")')).toBeVisible();
@@ -154,7 +166,9 @@ test.describe("Dashboard Page", () => {
     });
 
     // Verify data is still displayed
-    await expect(page.locator("main").locator("text=Total Flags")).toBeVisible();
+    await expect(
+      page.locator("main").locator("text=Total Flags"),
+    ).toBeVisible();
     await expect(page.locator('h2:has-text("Recent Activity")')).toBeVisible();
   });
 

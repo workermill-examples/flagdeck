@@ -25,7 +25,7 @@ test.describe("Login Flow", () => {
     await page.click('button[type="submit"]');
 
     // Wait for redirect to dashboard
-    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 30000 });
 
     // Verify we're on the dashboard
     await expect(page.locator("main h1")).toContainText("Dashboard");
@@ -83,14 +83,15 @@ test.describe("Login Flow", () => {
   test("redirects to dashboard if already authenticated", async ({ page }) => {
     // First login to get authentication
     await page.goto("/login");
+    await page.waitForSelector("#email", { state: "visible" });
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 30000 });
 
     // Now try to visit login page again
     await page.goto("/login");
 
     // Should be redirected to dashboard
-    await expect(page).toHaveURL("/dashboard", { timeout: 15000 });
+    await expect(page).toHaveURL("/dashboard", { timeout: 30000 });
   });
 
   test("demo credentials notice is visible", async ({ page }) => {

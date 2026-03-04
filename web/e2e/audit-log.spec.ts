@@ -3,9 +3,9 @@ import { test, expect } from "@playwright/test";
 // Helper function to login before each test
 async function login(page: any) {
   await page.goto("/login");
-  await page.waitForSelector('#email', { state: 'visible' });
+  await page.waitForSelector("#email", { state: "visible" });
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard', { timeout: 30000 });
+  await page.waitForURL("**/dashboard", { timeout: 30000 });
 }
 
 test.describe("Audit Log Page", () => {
