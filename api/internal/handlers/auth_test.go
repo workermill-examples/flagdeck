@@ -60,26 +60,11 @@ func TestRefreshRequest_Structure(t *testing.T) {
 
 func TestAuthResponse_Structure(t *testing.T) {
 	// Test the auth response structure
-	userResp := UserResponse{
-		ID:        "507f1f77bcf86cd799439011",
-		Email:     "test@example.com",
-		Name:      "Test User",
-		Role:      "viewer",
-		CreatedAt: time.Now(),
-	}
-
 	authResp := AuthResponse{
-		User:         userResp,
 		AccessToken:  "access-token-here",
 		RefreshToken: "refresh-token-here",
-	}
-
-	if authResp.User.Email != "test@example.com" {
-		t.Errorf("Expected user email 'test@example.com', got '%s'", authResp.User.Email)
-	}
-
-	if authResp.User.Role != "viewer" {
-		t.Errorf("Expected user role 'viewer', got '%s'", authResp.User.Role)
+		ExpiresIn:    900,
+		TokenType:    "Bearer",
 	}
 
 	if authResp.AccessToken != "access-token-here" {
@@ -88,6 +73,14 @@ func TestAuthResponse_Structure(t *testing.T) {
 
 	if authResp.RefreshToken != "refresh-token-here" {
 		t.Errorf("Expected refresh_token 'refresh-token-here', got '%s'", authResp.RefreshToken)
+	}
+
+	if authResp.ExpiresIn != 900 {
+		t.Errorf("Expected expires_in 900, got %d", authResp.ExpiresIn)
+	}
+
+	if authResp.TokenType != "Bearer" {
+		t.Errorf("Expected token_type 'Bearer', got '%s'", authResp.TokenType)
 	}
 }
 
